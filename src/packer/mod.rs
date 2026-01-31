@@ -118,6 +118,7 @@ pub fn pack(
     );
 
     // Phase 2: SIGNATURES
+    // Add signatures incrementally - fit as many as possible per file
     if include_signatures && config.signatures.enabled {
         if let Ok(mut extractor) = SignatureExtractor::new() {
             extractor.set_max_signature_length(config.signatures.max_signature_length);
@@ -133,12 +134,32 @@ pub fn pack(
                             continue;
                         }
                         let rel_path = file.relative_path.to_string_lossy().to_string();
-                        let sig_texts: Vec<String> =
-                            sigs.iter().map(|s| s.compact()).collect();
-                        let segment = format!("{}:{}", rel_path, sig_texts.join(","));
-                        if !push_segment(&mut segments, &mut budget, segment) {
-                            break;
+
+                        // Try to fit signatures incrementally
+                        let mut sig_texts: Vec<String> = Vec::new();
+                        for sig in &sigs {
+                            let compact = sig.compact();
+                            let test_segment = if sig_texts.is_empty() {
+                                format!("{}:{}", rel_path, compact)
+                            } else {
+                                format!("{}:{},{}", rel_path, sig_texts.join(","), compact)
+                            };
+
+                            // Check if this segment would fit
+                            let candidate = format!("|{}", test_segment);
+                            if budget.would_fit(&candidate) {
+                                sig_texts.push(compact);
+                            } else {
+                                break; // Can't fit more signatures from this file
+                            }
                         }
+
+                        // Add segment if we got any signatures
+                        if !sig_texts.is_empty() {
+                            let segment = format!("{}:{}", rel_path, sig_texts.join(","));
+                            push_segment(&mut segments, &mut budget, segment);
+                        }
+                        // Continue to next file even if nothing fit
                     }
                 }
             }

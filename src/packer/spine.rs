@@ -231,6 +231,7 @@ mod tests {
             size: 100,
             extension: path.rsplit('.').next().unwrap_or("").to_string(),
             depth: path.matches('/').count(),
+            representation: crate::scanner::entry::Representation::NameOnly,
         }
     }
 

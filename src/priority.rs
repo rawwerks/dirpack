@@ -135,6 +135,7 @@ mod tests {
             size: 100,
             extension: path.rsplit('.').next().unwrap_or("").to_string(),
             depth: 0,
+            representation: crate::scanner::entry::Representation::NameOnly,
         }
     }
 

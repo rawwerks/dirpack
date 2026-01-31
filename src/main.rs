@@ -16,6 +16,7 @@ fn main() -> anyhow::Result<()> {
         Commands::Pack(args) => run_pack(args)?,
         Commands::Init(args) => run_init(args)?,
         Commands::Tree(args) => run_tree(args)?,
+        Commands::Eval(args) => run_eval(args)?,
     }
 
     Ok(())
@@ -135,6 +136,29 @@ fn run_tree(args: dirpack::cli::TreeArgs) -> anyhow::Result<()> {
         }
     }
 
+    Ok(())
+}
+
+fn run_eval(args: dirpack::cli::EvalArgs) -> anyhow::Result<()> {
+    let root = args.path.canonicalize().unwrap_or(args.path.clone());
+    if !root.exists() {
+        anyhow::bail!("Path does not exist: {}", root.display());
+    }
+
+    let budgets = if args.budgets.is_empty() {
+        vec![500, 1000, 2000, 4000]
+    } else {
+        args.budgets
+    };
+
+    let report = dirpack::eval::evaluate(&root, &budgets);
+    let output = if args.pretty {
+        serde_json::to_string_pretty(&report)?
+    } else {
+        serde_json::to_string(&report)?
+    };
+
+    println!("{}", output);
     Ok(())
 }
 

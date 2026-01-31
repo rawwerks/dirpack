@@ -24,6 +24,8 @@ pub enum Commands {
     Init(InitArgs),
     /// Display directory structure (debug mode)
     Tree(TreeArgs),
+    /// Evaluate allocation metrics for a repository
+    Eval(EvalArgs),
 }
 
 #[derive(Debug, Args, Clone)]
@@ -138,4 +140,19 @@ pub struct TreeArgs {
     /// Show detected category for each file
     #[arg(long = "show-category")]
     pub show_category: bool,
+}
+
+#[derive(Debug, Args, Clone)]
+pub struct EvalArgs {
+    /// Directory to evaluate
+    #[arg(value_name = "PATH", default_value = ".")]
+    pub path: PathBuf,
+
+    /// Budgets to evaluate (comma-separated)
+    #[arg(long = "budgets", value_name = "N", value_delimiter = ',', num_args = 1..)]
+    pub budgets: Vec<usize>,
+
+    /// Pretty-print JSON output
+    #[arg(long = "pretty")]
+    pub pretty: bool,
 }

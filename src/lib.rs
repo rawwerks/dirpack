@@ -2,6 +2,7 @@ pub mod budget;
 pub mod cli;
 pub mod config;
 pub mod error;
+pub mod eval;
 pub mod format;
 pub mod packer;
 pub mod priority;

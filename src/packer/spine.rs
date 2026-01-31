@@ -193,6 +193,144 @@ pub fn format_tree_ascii(entries: &[FileEntry]) -> String {
     output
 }
 
+pub(crate) fn add_tree_segments(
+    entries: &[FileEntry],
+    entry_point_names: &BTreeSet<String>,
+    segments: &mut Vec<String>,
+    budget: &mut Budget,
+    tree_budget: &mut Budget,
+    max_files_per_dir: usize,
+    push_segment: &mut dyn FnMut(&mut Vec<String>, &mut Budget, String) -> bool,
+) {
+    if tree_budget.limit() == 0 || tree_budget.remaining() == 0 {
+        return;
+    }
+
+    // Group files by parent directory, tracking depth for priority
+    let mut dirs_by_depth: BTreeMap<usize, BTreeMap<String, BTreeSet<String>>> = BTreeMap::new();
+    let mut top_level_dirs: BTreeSet<String> = BTreeSet::new();
+    let mut entry_point_dirs: BTreeSet<String> = BTreeSet::new();
+
+    for entry in entries {
+        let parent = entry
+            .relative_path
+            .parent()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default();
+
+        let file_name = entry.file_name().to_string();
+        let depth = if parent.is_empty() {
+            0
+        } else {
+            parent.matches('/').count() + 1
+        };
+
+        if entry.is_dir {
+            if entry.depth == 0 {
+                top_level_dirs.insert(file_name);
+            }
+        } else {
+            if entry_point_names.contains(&file_name) {
+                entry_point_dirs.insert(parent.clone());
+            }
+            dirs_by_depth
+                .entry(depth)
+                .or_default()
+                .entry(parent)
+                .or_default()
+                .insert(file_name);
+        }
+    }
+
+    // Add top-level dirs listing first
+    if !top_level_dirs.is_empty() {
+        let segment = format!(
+            "dirs:{{{}}}",
+            top_level_dirs.into_iter().collect::<Vec<_>>().join(",")
+        );
+        if tree_budget.would_fit(&segment) {
+            tree_budget.add(&segment);
+            let _ = push_segment(segments, budget, segment);
+        }
+    }
+
+    // Add directories level by level (shallow first) until tree budget exhausted
+    let mut processed_dirs: BTreeSet<String> = BTreeSet::new();
+
+    // Ensure entry-point directories are emitted first
+    for entry_dir in entry_point_dirs.iter() {
+        let mut files_for_dir: Option<BTreeSet<String>> = None;
+        for (_depth, dirs_at_level) in &dirs_by_depth {
+            if let Some(files) = dirs_at_level.get(entry_dir) {
+                files_for_dir = Some(files.clone());
+                break;
+            }
+        }
+        if let Some(files) = files_for_dir {
+            if tree_budget.is_exhausted() {
+                break;
+            }
+            let dir_name = if entry_dir.is_empty() { "." } else { entry_dir };
+            let mut file_list = files.into_iter().collect::<Vec<_>>();
+            file_list.sort_by(|a, b| {
+                let a_pri = entry_point_names.contains(a);
+                let b_pri = entry_point_names.contains(b);
+                b_pri.cmp(&a_pri).then_with(|| a.cmp(b))
+            });
+            file_list.truncate(max_files_per_dir);
+            let segment = format!("{}:{{{}}}", dir_name, file_list.join(","));
+            if tree_budget.would_fit(&segment) {
+                tree_budget.add(&segment);
+                let _ = push_segment(segments, budget, segment);
+                processed_dirs.insert(entry_dir.clone());
+            }
+        }
+    }
+
+    for (_depth, dirs_at_level) in dirs_by_depth {
+        if tree_budget.is_exhausted() {
+            break;
+        }
+        let mut dirs_vec: Vec<(String, BTreeSet<String>)> = dirs_at_level.into_iter().collect();
+        dirs_vec.sort_by(|(a_dir, _), (b_dir, _)| {
+            let a_pri = entry_point_dirs.contains(a_dir);
+            let b_pri = entry_point_dirs.contains(b_dir);
+            b_pri.cmp(&a_pri).then_with(|| a_dir.cmp(b_dir))
+        });
+
+        for (dir, files) in dirs_vec {
+            if tree_budget.is_exhausted() {
+                break;
+            }
+            if processed_dirs.contains(&dir) {
+                continue;
+            }
+
+            let dir_name = if dir.is_empty() { "." } else { &dir };
+            if !files.is_empty() {
+                let mut file_list = files.into_iter().collect::<Vec<_>>();
+                file_list.sort_by(|a, b| {
+                    let a_pri = entry_point_names.contains(a);
+                    let b_pri = entry_point_names.contains(b);
+                    b_pri.cmp(&a_pri).then_with(|| a.cmp(b))
+                });
+                file_list.truncate(max_files_per_dir);
+                let segment = format!(
+                    "{}:{{{}}}",
+                    dir_name,
+                    file_list.join(",")
+                );
+                if tree_budget.would_fit(&segment) {
+                    tree_budget.add(&segment);
+                    if !push_segment(segments, budget, segment) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
 fn format_node_ascii(node: &TreeNode, prefix: &str, is_last: bool, output: &mut String, is_root: bool) {
     if !is_root {
         let connector = if is_last { "└── " } else { "├── " };

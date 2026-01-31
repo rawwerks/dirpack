@@ -9,7 +9,7 @@ pub mod walk;
 use std::path::Path;
 
 use crate::config::ScanningConfig;
-use entry::FileEntry;
+pub use entry::{FileEntry, Representation};
 
 /// Scan a directory, preferring git ls-files if available.
 pub fn scan(root: &Path, config: &ScanningConfig, use_git: bool) -> Vec<FileEntry> {

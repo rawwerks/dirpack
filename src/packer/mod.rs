@@ -14,11 +14,13 @@ use std::path::Path;
 
 use crate::budget::{Budget, BudgetTarget};
 use crate::config::Config;
-use crate::format::pipe::PipeFormatter;
 use crate::priority;
 use crate::scanner;
+use crate::scanner::entry::FileEntry;
 
 use signatures::SignatureExtractor;
+
+const TREE_BUDGET_RATIO: f64 = 0.4;
 
 /// Result of packing a directory.
 pub struct PackResult {
@@ -58,13 +60,62 @@ pub fn pack(
         &config.categories,
     );
 
-    // Create formatter
-    let mut formatter = PipeFormatter::new(title, &root_str);
-    formatter.set_entries(entries.clone());
+    // Check for README to extract important note
+    let mut important_note = None;
+    for file in &files_by_priority {
+        let name = file.file_name().to_uppercase();
+        if name.starts_with("README") {
+            if let Some(content) = content::read_entry_content(file) {
+                let summary = content::extract_summary(&content, 3);
+                let first_line = summary.lines().next().unwrap_or("").trim();
+                if !first_line.is_empty() && first_line.len() < 100 {
+                    important_note = Some(first_line.to_string());
+                }
+                break;
+            }
+        }
+    }
 
-    // Add the tree structure (Phase 1: SPINE)
-    let tree_output = spine::format_tree_compact(&entries);
-    budget.add(&tree_output);
+    let mut segments: Vec<String> = Vec::new();
+
+    let mut push_segment = |segments: &mut Vec<String>, budget: &mut Budget, segment: String| -> bool {
+        let candidate = if segments.is_empty() {
+            segment.clone()
+        } else {
+            format!("|{}", segment)
+        };
+        if budget.try_add(&candidate) {
+            segments.push(segment);
+            true
+        } else {
+            false
+        }
+    };
+
+    // Header segments
+    let _ = push_segment(&mut segments, &mut budget, format!("[{}]", title));
+    let _ = push_segment(&mut segments, &mut budget, format!("root: {}", root_str));
+    if let Some(note) = &important_note {
+        let _ = push_segment(
+            &mut segments,
+            &mut budget,
+            format!("IMPORTANT: {}", note),
+        );
+    }
+
+    // Tree segments (Phase 1: SPINE) with budget ratio cap
+    let tree_limit = (budget.limit() as f64 * TREE_BUDGET_RATIO).floor() as usize;
+    let mut tree_budget = match budget.target {
+        BudgetTarget::Tokens(_) => Budget::tokens(tree_limit),
+        BudgetTarget::Bytes(_) => Budget::bytes(tree_limit),
+    };
+    add_tree_segments(
+        &entries,
+        &mut segments,
+        &mut budget,
+        &mut tree_budget,
+        &mut push_segment,
+    );
 
     // Phase 2: SIGNATURES
     if include_signatures && config.signatures.enabled {
@@ -78,12 +129,15 @@ pub fn pack(
 
                 if extractor.supports_extension(&file.extension) {
                     if let Ok(sigs) = extractor.extract_from_file(&file.path) {
-                        // Estimate signature cost
-                        let sig_text: String = sigs.iter().map(|s| s.compact()).collect();
-                        if budget.would_fit(&sig_text) {
-                            budget.add(&sig_text);
-                            let rel_path = file.relative_path.to_string_lossy().to_string();
-                            formatter.add_signatures(&rel_path, sigs);
+                        if sigs.is_empty() {
+                            continue;
+                        }
+                        let rel_path = file.relative_path.to_string_lossy().to_string();
+                        let sig_texts: Vec<String> =
+                            sigs.iter().map(|s| s.compact()).collect();
+                        let segment = format!("{}:{}", rel_path, sig_texts.join(","));
+                        if !push_segment(&mut segments, &mut budget, segment) {
+                            break;
                         }
                     }
                 }
@@ -91,22 +145,7 @@ pub fn pack(
         }
     }
 
-    // Check for README to extract important note
-    for file in &files_by_priority {
-        let name = file.file_name().to_uppercase();
-        if name.starts_with("README") {
-            if let Some(content) = content::read_entry_content(file) {
-                let summary = content::extract_summary(&content, 3);
-                let first_line = summary.lines().next().unwrap_or("");
-                if !first_line.is_empty() && first_line.len() < 100 {
-                    formatter.set_important(first_line);
-                }
-                break;
-            }
-        }
-    }
-
-    let output = formatter.format();
+    let output = segments.join("|");
     let budget_used = budget.used;
     let budget_limit = budget.limit();
 
@@ -128,4 +167,90 @@ pub fn pack_default(root: &Path, target_tokens: usize) -> PackResult {
         true,
         true,
     )
+}
+
+fn add_tree_segments(
+    entries: &[FileEntry],
+    segments: &mut Vec<String>,
+    budget: &mut Budget,
+    tree_budget: &mut Budget,
+    push_segment: &mut dyn FnMut(&mut Vec<String>, &mut Budget, String) -> bool,
+) {
+    use std::collections::{BTreeMap, BTreeSet};
+
+    if tree_budget.limit() == 0 || tree_budget.remaining() == 0 {
+        return;
+    }
+
+    // Group files by parent directory, tracking depth for priority
+    let mut dirs_by_depth: BTreeMap<usize, BTreeMap<String, BTreeSet<String>>> = BTreeMap::new();
+    let mut top_level_dirs: BTreeSet<String> = BTreeSet::new();
+
+    for entry in entries {
+        let parent = entry
+            .relative_path
+            .parent()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default();
+
+        let file_name = entry.file_name().to_string();
+        let depth = if parent.is_empty() {
+            0
+        } else {
+            parent.matches('/').count() + 1
+        };
+
+        if entry.is_dir {
+            if entry.depth == 0 {
+                top_level_dirs.insert(file_name);
+            }
+        } else {
+            dirs_by_depth
+                .entry(depth)
+                .or_default()
+                .entry(parent)
+                .or_default()
+                .insert(file_name);
+        }
+    }
+
+    // Add top-level dirs listing first
+    if !top_level_dirs.is_empty() {
+        let segment = format!(
+            "dirs:{{{}}}",
+            top_level_dirs.into_iter().collect::<Vec<_>>().join(",")
+        );
+        if tree_budget.would_fit(&segment) {
+            tree_budget.add(&segment);
+            let _ = push_segment(segments, budget, segment);
+        }
+    }
+
+    // Add directories level by level (shallow first) until tree budget exhausted
+    for (_depth, dirs_at_level) in dirs_by_depth {
+        if tree_budget.is_exhausted() {
+            break;
+        }
+
+        for (dir, files) in dirs_at_level {
+            if tree_budget.is_exhausted() {
+                break;
+            }
+
+            let dir_name = if dir.is_empty() { "." } else { &dir };
+            if !files.is_empty() {
+                let segment = format!(
+                    "{}:{{{}}}",
+                    dir_name,
+                    files.into_iter().collect::<Vec<_>>().join(",")
+                );
+                if tree_budget.would_fit(&segment) {
+                    tree_budget.add(&segment);
+                    if !push_segment(segments, budget, segment) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }

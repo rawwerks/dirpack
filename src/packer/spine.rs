@@ -2,7 +2,11 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::budget::Budget;
 use crate::scanner::entry::FileEntry;
+
+/// Maximum fraction of budget that spine can use (40%).
+pub const SPINE_BUDGET_FRACTION: f64 = 0.40;
 
 /// A node in the directory tree.
 #[derive(Debug, Default)]
@@ -92,6 +96,93 @@ pub fn format_tree_compact(entries: &[FileEntry]) -> String {
     }
 
     parts.join("|")
+}
+
+/// Generate a budget-aware compact tree representation.
+/// Stops adding directories when spine budget (40% of total) is exhausted.
+/// Prioritizes shallow directories over deep ones for better coverage.
+pub fn format_tree_compact_budgeted(entries: &[FileEntry], budget: &mut Budget) -> String {
+    let spine_budget = (budget.limit() as f64 * SPINE_BUDGET_FRACTION) as usize;
+    let mut spine_used = 0;
+
+    // Group files by parent directory, tracking depth
+    let mut dirs_by_depth: BTreeMap<usize, BTreeMap<String, BTreeSet<String>>> = BTreeMap::new();
+    let mut top_level_dirs: BTreeSet<String> = BTreeSet::new();
+
+    for entry in entries {
+        let parent = entry
+            .relative_path
+            .parent()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default();
+
+        let file_name = entry.file_name().to_string();
+        let depth = if parent.is_empty() { 0 } else { parent.matches('/').count() + 1 };
+
+        if entry.is_dir {
+            if entry.depth == 0 {
+                top_level_dirs.insert(file_name);
+            }
+        } else {
+            dirs_by_depth
+                .entry(depth)
+                .or_default()
+                .entry(parent)
+                .or_default()
+                .insert(file_name);
+        }
+    }
+
+    let mut parts = Vec::new();
+
+    // Always try to add top-level dirs listing first
+    if !top_level_dirs.is_empty() {
+        let dirs_part = format!("dirs:{{{}}}", top_level_dirs.into_iter().collect::<Vec<_>>().join(","));
+        let cost = estimate_spine_cost(&dirs_part, budget);
+        if spine_used + cost <= spine_budget {
+            spine_used += cost;
+            parts.push(dirs_part);
+        }
+    }
+
+    // Add directories level by level (shallow first) until budget exhausted
+    for (_depth, dirs_at_level) in dirs_by_depth {
+        if spine_used >= spine_budget {
+            break;
+        }
+
+        for (dir, files) in dirs_at_level {
+            if spine_used >= spine_budget {
+                break;
+            }
+
+            let dir_name = if dir.is_empty() { "." } else { &dir };
+            if !files.is_empty() {
+                let part = format!(
+                    "{}:{{{}}}",
+                    dir_name,
+                    files.into_iter().collect::<Vec<_>>().join(",")
+                );
+                let cost = estimate_spine_cost(&part, budget);
+                if spine_used + cost <= spine_budget {
+                    spine_used += cost;
+                    parts.push(part);
+                }
+            }
+        }
+    }
+
+    let result = parts.join("|");
+    budget.add(&result);
+    result
+}
+
+/// Estimate the cost of a spine segment based on budget type.
+fn estimate_spine_cost(s: &str, budget: &Budget) -> usize {
+    match budget.target {
+        crate::budget::BudgetTarget::Tokens(_) => crate::tokenizer::count_tokens(s),
+        crate::budget::BudgetTarget::Bytes(_) => s.len(),
+    }
 }
 
 /// Generate an ASCII tree representation.

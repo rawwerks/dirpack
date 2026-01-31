@@ -2,6 +2,33 @@
 
 use std::path::{Path, PathBuf};
 
+/// Level of detail for file representation in output.
+/// Used for progressive disclosure / mesh decimation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
+pub enum Representation {
+    /// Just the name in the tree (default, cheapest)
+    #[default]
+    NameOnly,
+    /// Signatures/headings extracted
+    Structure,
+    /// First N lines of content
+    Snippet,
+    /// Full file content
+    Full,
+}
+
+impl Representation {
+    /// Get the next higher detail level, if any.
+    pub fn upgrade(&self) -> Option<Representation> {
+        match self {
+            Representation::NameOnly => Some(Representation::Structure),
+            Representation::Structure => Some(Representation::Snippet),
+            Representation::Snippet => Some(Representation::Full),
+            Representation::Full => None,
+        }
+    }
+}
+
 /// Represents a file or directory found during scanning.
 #[derive(Debug, Clone)]
 pub struct FileEntry {
@@ -17,6 +44,8 @@ pub struct FileEntry {
     pub extension: String,
     /// Depth from root (0 = root level)
     pub depth: usize,
+    /// Current representation level for output
+    pub representation: Representation,
 }
 
 impl FileEntry {
@@ -40,6 +69,7 @@ impl FileEntry {
             size,
             extension,
             depth,
+            representation: Representation::NameOnly,
         }
     }
 

@@ -23,6 +23,9 @@ use signatures::SignatureExtractor;
 // Tree budget ratio (30% to account for header overhead and ensure ≤40% in output)
 const TREE_BUDGET_RATIO: f64 = 0.30;
 
+// Max files per directory to reduce lopsidedness (spread coverage evenly)
+const MAX_FILES_PER_DIR: usize = 8;
+
 /// Result of packing a directory.
 pub struct PackResult {
     pub output: String,
@@ -278,6 +281,8 @@ fn add_tree_segments(
                 let b_pri = entry_point_names.contains(b);
                 b_pri.cmp(&a_pri).then_with(|| a.cmp(b))
             });
+            // Cap files per directory to reduce lopsidedness
+            file_list.truncate(MAX_FILES_PER_DIR);
             let segment = format!("{}:{{{}}}", dir_name, file_list.join(","));
             if tree_budget.would_fit(&segment) {
                 tree_budget.add(&segment);
@@ -314,6 +319,8 @@ fn add_tree_segments(
                     let b_pri = entry_point_names.contains(b);
                     b_pri.cmp(&a_pri).then_with(|| a.cmp(b))
                 });
+                // Cap files per directory to reduce lopsidedness
+                file_list.truncate(MAX_FILES_PER_DIR);
                 let segment = format!(
                     "{}:{{{}}}",
                     dir_name,

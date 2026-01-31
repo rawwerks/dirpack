@@ -10,15 +10,21 @@ pub fn is_git_repo(root: &Path) -> bool {
     root.join(".git").exists()
 }
 
-/// Scan a directory using git ls-files.
-/// Returns None if not a git repo, git command fails, or no tracked files.
+/// Scan a directory using git ls-files (tracked + untracked, excluding ignored).
+/// Returns None if not a git repo, git command fails, or no files found.
 pub fn scan_git(root: &Path) -> Option<Vec<FileEntry>> {
     if !is_git_repo(root) {
         return None;
     }
 
     let output = Command::new("git")
-        .args(["ls-files", "-z"])
+        .args([
+            "ls-files",
+            "-z",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+        ])
         .current_dir(root)
         .output()
         .ok()?;

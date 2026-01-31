@@ -11,13 +11,19 @@ use crate::scanner::entry::FileEntry;
 pub fn scan_walk(root: &Path, config: &ScanningConfig) -> Vec<FileEntry> {
     let mut entries = Vec::new();
 
+    let max_depth = if config.max_depth == 0 {
+        None
+    } else {
+        Some(config.max_depth)
+    };
+
     let walker = WalkBuilder::new(root)
         .hidden(!config.include_hidden)
         .git_ignore(config.use_gitignore)
         .git_global(config.use_gitignore)
         .git_exclude(config.use_gitignore)
         .follow_links(config.follow_symlinks)
-        .max_depth(Some(config.max_depth))
+        .max_depth(max_depth)
         .build();
 
     for result in walker {

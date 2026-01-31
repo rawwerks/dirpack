@@ -2,6 +2,11 @@
 name = "dirpack"
 version = "0.1.0"
 edition = "2021"
+description = "Budgeted directory indexes for AI coding agents with tree-sitter signatures"
+license = "MIT"
+repository = "https://github.com/rawwerks/dirpack"
+keywords = ["cli", "ai", "context", "tree-sitter", "llm"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }

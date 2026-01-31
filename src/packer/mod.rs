@@ -30,7 +30,7 @@ const SNIPPET_BUDGET_RATIO: f64 = 0.30;
 const FULL_BUDGET_RATIO: f64 = 0.30;
 
 // Max files per directory to reduce lopsidedness (spread coverage evenly)
-const MAX_FILES_PER_DIR: usize = 5;
+const MAX_FILES_PER_DIR: usize = 8;
 
 // Max lines for snippet representation
 const SNIPPET_MAX_LINES: usize = 6;

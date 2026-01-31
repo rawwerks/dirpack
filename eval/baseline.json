@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-31T15:12:56.940669",
+  "timestamp": "2026-01-31T15:23:35",
   "budgets": [
     500,
     1000,
@@ -12,28 +12,12 @@
       "budgets": [
         {
           "target_tokens": 500,
-          "actual_tokens": 504,
-          "overshoot_ratio": 0.008,
-          "tree_tokens": 175,
-          "tree_ratio": 0.35,
-          "entry_points_expected": [
-            "Cargo.toml",
-            "lib.rs",
-            "main.rs"
-          ],
-          "entry_points_missing": [],
-          "entry_point_coverage": 1.0,
-          "coverage_spread": 0.2,
-          "lopsidedness": 1.0,
-          "signature_files": 4,
-          "path_diversity": 4
-        },
-        {
-          "target_tokens": 1000,
-          "actual_tokens": 1006,
-          "overshoot_ratio": 0.006,
-          "tree_tokens": 258,
-          "tree_ratio": 0.258,
+          "actual_tokens": 506,
+          "elapsed_ms": 77,
+          "tokens_per_sec": 6515.840245865059,
+          "overshoot_ratio": 0.012,
+          "tree_tokens": 156,
+          "tree_ratio": 0.312,
           "entry_points_expected": [
             "Cargo.toml",
             "lib.rs",
@@ -42,6 +26,26 @@
           "entry_points_missing": [],
           "entry_point_coverage": 1.0,
           "coverage_spread": 0.16666666666666666,
+          "lopsidedness": 1.0,
+          "signature_files": 5,
+          "path_diversity": 5
+        },
+        {
+          "target_tokens": 1000,
+          "actual_tokens": 1006,
+          "elapsed_ms": 85,
+          "tokens_per_sec": 11780.631433413366,
+          "overshoot_ratio": 0.006,
+          "tree_tokens": 283,
+          "tree_ratio": 0.283,
+          "entry_points_expected": [
+            "Cargo.toml",
+            "lib.rs",
+            "main.rs"
+          ],
+          "entry_points_missing": [],
+          "entry_point_coverage": 1.0,
+          "coverage_spread": 0.14285714285714285,
           "lopsidedness": 1.0,
           "signature_files": 6,
           "path_diversity": 6
@@ -49,9 +53,11 @@
         {
           "target_tokens": 2000,
           "actual_tokens": 2008,
+          "elapsed_ms": 311,
+          "tokens_per_sec": 6451.731846926287,
           "overshoot_ratio": 0.004,
-          "tree_tokens": 258,
-          "tree_ratio": 0.129,
+          "tree_tokens": 283,
+          "tree_ratio": 0.1415,
           "entry_points_expected": [
             "Cargo.toml",
             "lib.rs",
@@ -59,17 +65,19 @@
           ],
           "entry_points_missing": [],
           "entry_point_coverage": 1.0,
-          "coverage_spread": 0.16666666666666666,
+          "coverage_spread": 0.14285714285714285,
           "lopsidedness": 1.0,
-          "signature_files": 13,
-          "path_diversity": 10
+          "signature_files": 12,
+          "path_diversity": 9
         },
         {
           "target_tokens": 4000,
-          "actual_tokens": 3581,
+          "actual_tokens": 3627,
+          "elapsed_ms": 284,
+          "tokens_per_sec": 12762.56739195067,
           "overshoot_ratio": 0.0,
-          "tree_tokens": 258,
-          "tree_ratio": 0.0645,
+          "tree_tokens": 283,
+          "tree_ratio": 0.07075,
           "entry_points_expected": [
             "Cargo.toml",
             "lib.rs",
@@ -77,7 +85,7 @@
           ],
           "entry_points_missing": [],
           "entry_point_coverage": 1.0,
-          "coverage_spread": 0.3333333333333333,
+          "coverage_spread": 0.2857142857142857,
           "lopsidedness": 1.5555555555555556,
           "signature_files": 27,
           "path_diversity": 14
@@ -89,27 +97,31 @@
       "budgets": [
         {
           "target_tokens": 500,
-          "actual_tokens": 502,
-          "overshoot_ratio": 0.004,
-          "tree_tokens": 180,
-          "tree_ratio": 0.36,
+          "actual_tokens": 504,
+          "elapsed_ms": 296,
+          "tokens_per_sec": 1697.0820643730503,
+          "overshoot_ratio": 0.008,
+          "tree_tokens": 149,
+          "tree_ratio": 0.298,
           "entry_points_expected": [
             "__init__.py",
             "pyproject.toml"
           ],
           "entry_points_missing": [],
           "entry_point_coverage": 1.0,
-          "coverage_spread": 0.0,
+          "coverage_spread": 0.3333333333333333,
           "lopsidedness": 1.0,
-          "signature_files": 2,
-          "path_diversity": 2
+          "signature_files": 4,
+          "path_diversity": 4
         },
         {
           "target_tokens": 1000,
-          "actual_tokens": 1008,
-          "overshoot_ratio": 0.008,
-          "tree_tokens": 359,
-          "tree_ratio": 0.359,
+          "actual_tokens": 1007,
+          "elapsed_ms": 283,
+          "tokens_per_sec": 3557.2988682907585,
+          "overshoot_ratio": 0.007,
+          "tree_tokens": 308,
+          "tree_ratio": 0.308,
           "entry_points_expected": [
             "__init__.py",
             "pyproject.toml"
@@ -123,27 +135,31 @@
         },
         {
           "target_tokens": 2000,
-          "actual_tokens": 2011,
-          "overshoot_ratio": 0.0055,
-          "tree_tokens": 718,
-          "tree_ratio": 0.359,
+          "actual_tokens": 2003,
+          "elapsed_ms": 1873,
+          "tokens_per_sec": 1069.0409533588308,
+          "overshoot_ratio": 0.0015,
+          "tree_tokens": 614,
+          "tree_ratio": 0.307,
           "entry_points_expected": [
             "__init__.py",
             "pyproject.toml"
           ],
           "entry_points_missing": [],
           "entry_point_coverage": 1.0,
-          "coverage_spread": 0.3333333333333333,
-          "lopsidedness": 1.7999999999999998,
-          "signature_files": 10,
-          "path_diversity": 7
+          "coverage_spread": 0.25,
+          "lopsidedness": 1.9090909090909092,
+          "signature_files": 11,
+          "path_diversity": 8
         },
         {
           "target_tokens": 4000,
-          "actual_tokens": 4027,
-          "overshoot_ratio": 0.00675,
-          "tree_tokens": 1440,
-          "tree_ratio": 0.36,
+          "actual_tokens": 4020,
+          "elapsed_ms": 1754,
+          "tokens_per_sec": 2291.2892664119427,
+          "overshoot_ratio": 0.005,
+          "tree_tokens": 1231,
+          "tree_ratio": 0.30775,
           "entry_points_expected": [
             "__init__.py",
             "pyproject.toml"
@@ -151,9 +167,9 @@
           "entry_points_missing": [],
           "entry_point_coverage": 1.0,
           "coverage_spread": 0.3333333333333333,
-          "lopsidedness": 3.15,
-          "signature_files": 20,
-          "path_diversity": 11
+          "lopsidedness": 2.8421052631578947,
+          "signature_files": 19,
+          "path_diversity": 10
         }
       ]
     },
@@ -162,10 +178,12 @@
       "budgets": [
         {
           "target_tokens": 500,
-          "actual_tokens": 502,
-          "overshoot_ratio": 0.004,
-          "tree_tokens": 173,
-          "tree_ratio": 0.346,
+          "actual_tokens": 505,
+          "elapsed_ms": 1940,
+          "tokens_per_sec": 260.29060880534325,
+          "overshoot_ratio": 0.01,
+          "tree_tokens": 151,
+          "tree_ratio": 0.302,
           "entry_points_expected": [
             "__init__.py",
             "pyproject.toml"
@@ -179,44 +197,50 @@
         },
         {
           "target_tokens": 1000,
-          "actual_tokens": 1011,
-          "overshoot_ratio": 0.011,
-          "tree_tokens": 353,
-          "tree_ratio": 0.353,
+          "actual_tokens": 1010,
+          "elapsed_ms": 1399,
+          "tokens_per_sec": 721.9132454180616,
+          "overshoot_ratio": 0.01,
+          "tree_tokens": 301,
+          "tree_ratio": 0.301,
           "entry_points_expected": [
             "__init__.py",
             "pyproject.toml"
           ],
           "entry_points_missing": [],
           "entry_point_coverage": 1.0,
-          "coverage_spread": 0.16666666666666666,
-          "lopsidedness": 1.2307692307692308,
+          "coverage_spread": 0.0,
+          "lopsidedness": 1.8461538461538463,
           "signature_files": 13,
           "path_diversity": 13
         },
         {
           "target_tokens": 2000,
-          "actual_tokens": 2010,
-          "overshoot_ratio": 0.005,
-          "tree_tokens": 705,
-          "tree_ratio": 0.3525,
+          "actual_tokens": 2013,
+          "elapsed_ms": 2092,
+          "tokens_per_sec": 962.0325661185268,
+          "overshoot_ratio": 0.0065,
+          "tree_tokens": 601,
+          "tree_ratio": 0.3005,
           "entry_points_expected": [
             "__init__.py",
             "pyproject.toml"
           ],
           "entry_points_missing": [],
           "entry_point_coverage": 1.0,
-          "coverage_spread": 0.16666666666666666,
+          "coverage_spread": 0.2,
           "lopsidedness": 1.2,
           "signature_files": 20,
           "path_diversity": 20
         },
         {
           "target_tokens": 4000,
-          "actual_tokens": 4012,
-          "overshoot_ratio": 0.003,
-          "tree_tokens": 1325,
-          "tree_ratio": 0.33125,
+          "actual_tokens": 4015,
+          "elapsed_ms": 2110,
+          "tokens_per_sec": 1902.3810338901335,
+          "overshoot_ratio": 0.00375,
+          "tree_tokens": 1147,
+          "tree_ratio": 0.28675,
           "entry_points_expected": [
             "__init__.py",
             "pyproject.toml"
@@ -224,9 +248,9 @@
           "entry_points_missing": [],
           "entry_point_coverage": 1.0,
           "coverage_spread": 0.42857142857142855,
-          "lopsidedness": 4.482758620689656,
-          "signature_files": 29,
-          "path_diversity": 29
+          "lopsidedness": 5.032258064516129,
+          "signature_files": 31,
+          "path_diversity": 31
         }
       ]
     }

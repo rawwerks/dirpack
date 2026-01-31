@@ -2,6 +2,7 @@
 
 use std::collections::{BTreeSet, HashMap};
 use std::path::Path;
+use std::time::Instant;
 
 use serde::Serialize;
 
@@ -22,6 +23,8 @@ pub struct EvalReport {
 pub struct EvalMetrics {
     pub target_tokens: usize,
     pub actual_tokens: usize,
+    pub elapsed_ms: u64,
+    pub tokens_per_sec: f64,
     pub overshoot_ratio: f64,
     pub tree_tokens: usize,
     pub tree_ratio: f64,
@@ -42,8 +45,10 @@ pub fn evaluate(path: &Path, budgets: &[usize]) -> EvalReport {
 
     let mut results = Vec::new();
     for target in budgets {
+        let start = Instant::now();
         let result = packer::pack(path, &config, BudgetTarget::Tokens(*target), true, true);
-        let metrics = compute_metrics(&result.output, *target, &entry_points);
+        let elapsed = start.elapsed();
+        let metrics = compute_metrics(&result.output, *target, &entry_points, elapsed);
         results.push(metrics);
     }
 
@@ -53,8 +58,20 @@ pub fn evaluate(path: &Path, budgets: &[usize]) -> EvalReport {
     }
 }
 
-fn compute_metrics(output: &str, target: usize, entry_points: &[String]) -> EvalMetrics {
+fn compute_metrics(
+    output: &str,
+    target: usize,
+    entry_points: &[String],
+    elapsed: std::time::Duration,
+) -> EvalMetrics {
     let actual_tokens = tokenizer::count_tokens(output);
+    let elapsed_ms = elapsed.as_millis() as u64;
+    let seconds = elapsed.as_secs_f64();
+    let tokens_per_sec = if seconds > 0.0 {
+        actual_tokens as f64 / seconds
+    } else {
+        0.0
+    };
     let overshoot_ratio = if actual_tokens > target {
         (actual_tokens - target) as f64 / target as f64
     } else {
@@ -74,6 +91,8 @@ fn compute_metrics(output: &str, target: usize, entry_points: &[String]) -> Eval
     EvalMetrics {
         target_tokens: target,
         actual_tokens,
+        elapsed_ms,
+        tokens_per_sec,
         overshoot_ratio,
         tree_tokens,
         tree_ratio,

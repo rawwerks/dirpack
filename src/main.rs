@@ -1,5 +1,6 @@
 use std::fs;
 use std::io::{self, Write};
+use std::time::Instant;
 
 use clap::Parser;
 
@@ -7,6 +8,7 @@ use dirpack::budget::BudgetTarget;
 use dirpack::cli::{Cli, Commands, PackArgs};
 use dirpack::config::{Config, OutputFormat};
 use dirpack::packer;
+use dirpack::tokenizer;
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
@@ -59,7 +61,9 @@ fn run_pack(args: PackArgs) -> anyhow::Result<()> {
     let use_git = !args.no_git;
     let include_signatures = !args.no_signatures;
 
+    let start = Instant::now();
     let result = packer::pack(&root, &config, budget_target, use_git, include_signatures);
+    let elapsed = start.elapsed();
 
     // Output
     let output = match format {
@@ -87,6 +91,22 @@ fn run_pack(args: PackArgs) -> anyhow::Result<()> {
             result.budget_used,
             result.budget_limit,
             (result.budget_used as f64 / result.budget_limit as f64) * 100.0
+        );
+    }
+
+    if args.timing {
+        let output_tokens = tokenizer::count_tokens(&output);
+        let seconds = elapsed.as_secs_f64();
+        let tokens_per_sec = if seconds > 0.0 {
+            output_tokens as f64 / seconds
+        } else {
+            0.0
+        };
+        eprintln!(
+            "\n--- Timing ---\nElapsed: {:.2} ms\nOutput tokens: {}\nTokens/sec: {:.1}",
+            seconds * 1000.0,
+            output_tokens,
+            tokens_per_sec
         );
     }
 

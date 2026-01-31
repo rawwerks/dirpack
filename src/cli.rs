@@ -82,6 +82,10 @@ pub struct PackArgs {
     #[arg(short = 'v', long = "verbose")]
     pub verbose: bool,
 
+    /// Print timing and throughput stats
+    #[arg(long = "timing")]
+    pub timing: bool,
+
     /// Suppress warnings
     #[arg(short = 'q', long = "quiet")]
     pub quiet: bool,
@@ -103,6 +107,7 @@ impl Default for PackArgs {
             no_signatures: false,
             title: None,
             verbose: false,
+            timing: false,
             quiet: false,
         }
     }

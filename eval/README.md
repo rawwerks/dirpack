@@ -13,6 +13,8 @@ This folder captures baseline metrics and the agreed thresholds for dirpack's al
   - **Threshold**: **100%** at budgets **>= 500 tokens**.
 - **Tree ratio**: `tree_tokens / target_tokens` (tree-only segments).
   - **Threshold**: **<= 40%** of budget.
+- **Elapsed time**: wall clock time for `pack` (ms).
+- **Tokens/sec**: `actual_tokens / elapsed_seconds`.
 
 ## Metrics (Tier 2/Informational)
 

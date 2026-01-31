@@ -1,0 +1,113 @@
+# dirpack.toml - Project configuration
+
+[output]
+format = "pipe"           # "pipe" | "full" | "json"
+default_budget_tokens = 4000
+default_budget_bytes = 16000
+
+[scanning]
+use_gitignore = true      # Respect .gitignore
+include_hidden = false    # Include .dotfiles/dirs
+max_depth = 20            # Max recursion depth
+follow_symlinks = false
+
+# File categories - used for prioritization and signature extraction
+[categories.code]
+extensions = ["rs", "go", "py", "ts", "tsx", "js", "jsx", "c", "cpp", "h", "hpp", "java", "rb", "ex", "exs"]
+priority = 100
+
+[categories.docs]
+extensions = ["md", "mdx", "txt", "rst", "adoc"]
+priority = 90
+
+[categories.config]
+extensions = ["toml", "yaml", "yml", "json", "ini", "cfg"]
+priority = 80
+
+[categories.build]
+extensions = ["lock", "sum"]
+priority = 20
+
+[categories.data]
+extensions = ["csv", "sql"]
+priority = 30
+
+# Priority rules - higher = more important, included first in budget
+[[priority_rules]]
+pattern = "README*"
+priority = 200
+
+[[priority_rules]]
+pattern = "AGENTS.md"
+priority = 200
+
+[[priority_rules]]
+pattern = "CLAUDE.md"
+priority = 200
+
+[[priority_rules]]
+pattern = "Cargo.toml"
+priority = 150
+
+[[priority_rules]]
+pattern = "package.json"
+priority = 150
+
+[[priority_rules]]
+pattern = "go.mod"
+priority = 150
+
+[[priority_rules]]
+pattern = "src/main.*"
+priority = 140
+
+[[priority_rules]]
+pattern = "src/lib.*"
+priority = 140
+
+[[priority_rules]]
+pattern = "**/mod.rs"
+priority = 130
+
+[[priority_rules]]
+pattern = "**/*_test.*"
+priority = 50
+
+[[priority_rules]]
+pattern = "**/test_*"
+priority = 50
+
+[[priority_rules]]
+pattern = "**/*.lock"
+priority = 10
+
+# Exclude patterns (gitignore syntax)
+[exclude]
+patterns = [
+    "target/",
+    "node_modules/",
+    "dist/",
+    "build/",
+    ".git/",
+    "__pycache__/",
+    "*.pyc",
+    ".DS_Store",
+    "*.min.js",
+    "*.min.css",
+    "vendor/",
+    ".venv/",
+    "venv/",
+]
+
+# Tree-sitter signature extraction
+[signatures]
+enabled = true
+languages = ["rust", "go", "python", "typescript", "javascript", "c", "cpp"]
+include_functions = true
+include_structs = true
+include_traits = true
+include_interfaces = true
+include_classes = true
+include_types = true
+include_constants = true
+max_signature_length = 200

@@ -19,7 +19,7 @@ use crate::priority;
 use crate::scanner;
 use crate::scanner::entry::{FileEntry, Representation};
 
-use signatures::SignatureExtractor;
+use signatures::{extract_markdown_headings, SignatureExtractor};
 
 // Tree budget ratio (30% to account for header overhead and ensure ≤40% in output)
 const TREE_BUDGET_RATIO: f64 = 0.30;
@@ -193,45 +193,59 @@ pub fn pack(
                         break;
                     }
 
-                    if extractor.supports_extension(&file.extension) {
-                        if let Ok(sigs) = extractor.extract_from_file(&file.path) {
-                            if sigs.is_empty() {
-                                continue;
-                            }
-                            let rel_path = file.relative_path.to_string_lossy().to_string();
-
-                            // Try to fit signatures incrementally
-                            let mut sig_texts: Vec<String> = Vec::new();
-                            for sig in &sigs {
-                                let compact = sig.compact();
-                                let test_segment = if sig_texts.is_empty() {
-                                    format!("{}:{}", rel_path, compact)
-                                } else {
-                                    format!("{}:{},{}", rel_path, sig_texts.join(","), compact)
-                                };
-
-                                let candidate = if segments.is_empty() {
-                                    test_segment.clone()
-                                } else {
-                                    format!("|{}", test_segment)
-                                };
-                                if budget.would_fit(&candidate) && structure_budget.would_fit(&candidate) {
-                                    sig_texts.push(compact);
-                                } else {
-                                    break;
-                                }
-                            }
-
-                            if !sig_texts.is_empty() {
-                                let segment = format!("{}:{}", rel_path, sig_texts.join(","));
-                                let _ = push_with_sub_budget(
-                                    &mut segments,
-                                    &mut budget,
-                                    &mut structure_budget,
-                                    segment,
-                                );
-                            }
+                    // Get signatures: markdown headings or code signatures
+                    let sigs = if file.extension.eq_ignore_ascii_case("md") {
+                        // Extract markdown headings
+                        if let Some(content) = content::read_entry_content(file) {
+                            extract_markdown_headings(&content)
+                        } else {
+                            continue;
                         }
+                    } else if extractor.supports_extension(&file.extension) {
+                        // Extract code signatures via tree-sitter
+                        match extractor.extract_from_file(&file.path) {
+                            Ok(s) => s,
+                            Err(_) => continue,
+                        }
+                    } else {
+                        continue;
+                    };
+
+                    if sigs.is_empty() {
+                        continue;
+                    }
+                    let rel_path = file.relative_path.to_string_lossy().to_string();
+
+                    // Try to fit signatures incrementally
+                    let mut sig_texts: Vec<String> = Vec::new();
+                    for sig in &sigs {
+                        let compact = sig.compact();
+                        let test_segment = if sig_texts.is_empty() {
+                            format!("{}:{}", rel_path, compact)
+                        } else {
+                            format!("{}:{},{}", rel_path, sig_texts.join(","), compact)
+                        };
+
+                        let candidate = if segments.is_empty() {
+                            test_segment.clone()
+                        } else {
+                            format!("|{}", test_segment)
+                        };
+                        if budget.would_fit(&candidate) && structure_budget.would_fit(&candidate) {
+                            sig_texts.push(compact);
+                        } else {
+                            break;
+                        }
+                    }
+
+                    if !sig_texts.is_empty() {
+                        let segment = format!("{}:{}", rel_path, sig_texts.join(","));
+                        let _ = push_with_sub_budget(
+                            &mut segments,
+                            &mut budget,
+                            &mut structure_budget,
+                            segment,
+                        );
                     }
                 }
             }

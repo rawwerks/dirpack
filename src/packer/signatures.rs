@@ -41,6 +41,8 @@ pub enum SignatureKind {
     Constant,
     Enum,
     Module,
+    /// Markdown heading (H1/H2/H3)
+    Heading,
 }
 
 impl std::fmt::Display for SignatureKind {
@@ -56,6 +58,7 @@ impl std::fmt::Display for SignatureKind {
             SignatureKind::Constant => write!(f, "const"),
             SignatureKind::Enum => write!(f, "enum"),
             SignatureKind::Module => write!(f, "mod"),
+            SignatureKind::Heading => write!(f, "#"),
         }
     }
 }
@@ -720,6 +723,67 @@ impl Default for SignatureExtractor {
     }
 }
 
+/// Extract headings from markdown content as signatures.
+/// Returns H1, H2, and H3 headings.
+pub fn extract_markdown_headings(content: &str) -> Vec<Signature> {
+    let mut signatures = Vec::new();
+
+    for (line_num, line) in content.lines().enumerate() {
+        let trimmed = line.trim_start();
+
+        // Match ATX-style headings (# ## ###)
+        if let Some(heading) = parse_atx_heading(trimmed) {
+            if heading.level <= 3 {
+                signatures.push(Signature {
+                    kind: SignatureKind::Heading,
+                    name: heading.text.clone(),
+                    text: heading.text,
+                    line: line_num + 1,
+                    visibility: None,
+                });
+            }
+        }
+    }
+
+    signatures
+}
+
+struct MarkdownHeading {
+    level: usize,
+    text: String,
+}
+
+fn parse_atx_heading(line: &str) -> Option<MarkdownHeading> {
+    // Count leading # characters
+    let hash_count = line.chars().take_while(|&c| c == '#').count();
+
+    if hash_count == 0 || hash_count > 6 {
+        return None;
+    }
+
+    // Must have space after # (or be empty heading)
+    let rest = &line[hash_count..];
+    if !rest.is_empty() && !rest.starts_with(' ') && !rest.starts_with('\t') {
+        return None;
+    }
+
+    // Extract heading text, removing trailing # and whitespace
+    let text = rest
+        .trim()
+        .trim_end_matches('#')
+        .trim()
+        .to_string();
+
+    if text.is_empty() {
+        return None;
+    }
+
+    Some(MarkdownHeading {
+        level: hash_count,
+        text,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -892,5 +956,58 @@ fn very_long_function_name_that_exceeds_the_limit(param1: VeryLongTypeName, para
         for sig in &sigs {
             assert!(sig.text.len() <= 50, "signature should be truncated");
         }
+    }
+
+    #[test]
+    fn test_markdown_heading_extraction() {
+        let content = r#"# My Project
+
+Some intro text here.
+
+## Installation
+
+Install with pip.
+
+### Requirements
+
+- Python 3.8+
+- Some library
+
+## Usage
+
+Use like this.
+
+#### Deep Heading
+
+This is H4, should be skipped.
+
+# Another H1
+"#;
+        let sigs = super::extract_markdown_headings(content);
+
+        let names: Vec<_> = sigs.iter().map(|s| s.name.as_str()).collect();
+        assert_eq!(names.len(), 5, "should find 5 headings (H1-H3 only)");
+        assert!(names.contains(&"My Project"), "should find H1");
+        assert!(names.contains(&"Installation"), "should find H2");
+        assert!(names.contains(&"Requirements"), "should find H3");
+        assert!(names.contains(&"Usage"), "should find H2");
+        assert!(names.contains(&"Another H1"), "should find second H1");
+        assert!(!names.contains(&"Deep Heading"), "should skip H4");
+
+        // Check line numbers
+        let h1 = sigs.iter().find(|s| s.name == "My Project").unwrap();
+        assert_eq!(h1.line, 1);
+    }
+
+    #[test]
+    fn test_markdown_heading_edge_cases() {
+        // Test various edge cases
+        let content = "# Simple\n##NoSpace\n### With Trailing ### \n###### H6 ignored";
+        let sigs = super::extract_markdown_headings(content);
+
+        let names: Vec<_> = sigs.iter().map(|s| s.name.as_str()).collect();
+        assert!(names.contains(&"Simple"), "basic H1");
+        assert!(names.contains(&"With Trailing"), "trailing hashes removed");
+        assert!(!names.contains(&"NoSpace"), "no space after # means not a heading");
     }
 }

@@ -20,7 +20,8 @@ use crate::scanner::entry::FileEntry;
 
 use signatures::SignatureExtractor;
 
-const TREE_BUDGET_RATIO: f64 = 0.35;
+// Tree budget ratio (30% to account for header overhead and ensure ≤40% in output)
+const TREE_BUDGET_RATIO: f64 = 0.30;
 
 /// Result of packing a directory.
 pub struct PackResult {

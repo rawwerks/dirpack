@@ -1,3 +1,6 @@
 /target
 .ntm/
 test-prompt.txt
+
+# bv (beads viewer) local config and caches
+.bv/

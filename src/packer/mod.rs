@@ -118,7 +118,10 @@ pub fn pack(
     }
 
     // Tree segments (Phase 1: SPINE) with budget ratio cap
-    let tree_limit = (budget.limit() as f64 * TREE_BUDGET_RATIO).floor() as usize;
+    let tree_limit = match budget.target {
+        BudgetTarget::Tokens(_) => (budget.limit() as f64 * TREE_BUDGET_RATIO).floor() as usize,
+        BudgetTarget::Bytes(_) => budget.limit(),
+    };
     let mut tree_budget = match budget.target {
         BudgetTarget::Tokens(_) => Budget::tokens(tree_limit),
         BudgetTarget::Bytes(_) => Budget::bytes(tree_limit),

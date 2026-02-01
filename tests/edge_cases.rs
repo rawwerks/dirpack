@@ -128,9 +128,16 @@ fn test_root_only_repo_tree_segment() {
 
 #[test]
 fn test_monorepo_dirs_listed() {
-    let root = fixture_path("monorepo");
+    let temp = TempDir::new().expect("tempdir");
+    let proj_a = temp.path().join("projA/src");
+    let proj_b = temp.path().join("projB/src");
+    fs::create_dir_all(&proj_a).expect("mkdir projA");
+    fs::create_dir_all(&proj_b).expect("mkdir projB");
+    fs::write(proj_a.join("main.rs"), "fn main() {}\n").expect("write projA main");
+    fs::write(proj_b.join("main.rs"), "fn main() {}\n").expect("write projB main");
+
     let output = pack_output(
-        &root,
+        temp.path(),
         BudgetTarget::Tokens(500),
         Config::default(),
         false,

@@ -1,7 +1,13 @@
 /target
 .ntm/
 test-prompt.txt
-internal/
+internal-private-docs/*.md
+internal-private-docs/*.pdf
+internal-private-docs/.slb/
+internal-private-docs/.slb-*
 
 # bv (beads viewer) local config and caches
 .bv/
+
+# slb (safety) local state
+.slb/

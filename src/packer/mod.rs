@@ -10,6 +10,7 @@ pub mod content;
 pub mod signatures;
 pub mod spine;
 
+use std::collections::HashMap;
 use std::path::Path;
 
 use crate::budget::{Budget, BudgetTarget};
@@ -20,7 +21,11 @@ use crate::scanner::entry::FileEntry;
 
 use signatures::SignatureExtractor;
 
-const TREE_BUDGET_RATIO: f64 = 0.4;
+// Tree budget ratio (30% to account for header overhead and ensure ≤40% in output)
+const TREE_BUDGET_RATIO: f64 = 0.30;
+
+// Cap detailed files per directory to reduce lopsidedness
+const MAX_FILES_PER_DIR: usize = 5;
 
 /// Result of packing a directory.
 pub struct PackResult {
@@ -122,6 +127,7 @@ pub fn pack(
     if include_signatures && config.signatures.enabled {
         if let Ok(mut extractor) = SignatureExtractor::new() {
             extractor.set_max_signature_length(config.signatures.max_signature_length);
+            let mut detail_counts: HashMap<String, usize> = HashMap::new();
 
             for file in &files_by_priority {
                 if budget.is_exhausted() {
@@ -134,6 +140,15 @@ pub fn pack(
                             continue;
                         }
                         let rel_path = file.relative_path.to_string_lossy().to_string();
+                        let dir = file
+                            .relative_path
+                            .parent()
+                            .map(|p| p.to_string_lossy().to_string())
+                            .unwrap_or_default();
+                        let count = detail_counts.get(&dir).copied().unwrap_or(0);
+                        if count >= MAX_FILES_PER_DIR {
+                            continue;
+                        }
 
                         // Try to fit signatures incrementally
                         let mut sig_texts: Vec<String> = Vec::new();
@@ -157,7 +172,9 @@ pub fn pack(
                         // Add segment if we got any signatures
                         if !sig_texts.is_empty() {
                             let segment = format!("{}:{}", rel_path, sig_texts.join(","));
-                            push_segment(&mut segments, &mut budget, segment);
+                            if push_segment(&mut segments, &mut budget, segment) {
+                                detail_counts.insert(dir, count + 1);
+                            }
                         }
                         // Continue to next file even if nothing fit
                     }
@@ -260,11 +277,9 @@ fn add_tree_segments(
 
             let dir_name = if dir.is_empty() { "." } else { &dir };
             if !files.is_empty() {
-                let segment = format!(
-                    "{}:{{{}}}",
-                    dir_name,
-                    files.into_iter().collect::<Vec<_>>().join(",")
-                );
+                let mut file_list = files.into_iter().collect::<Vec<_>>();
+                file_list.truncate(MAX_FILES_PER_DIR);
+                let segment = format!("{}:{{{}}}", dir_name, file_list.join(","));
                 if tree_budget.would_fit(&segment) {
                     tree_budget.add(&segment);
                     if !push_segment(segments, budget, segment) {

@@ -20,21 +20,6 @@ fn pack_output(root: &Path, budget: BudgetTarget, mut config: Config, use_git: b
     result.output
 }
 
-fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
-    fs::create_dir_all(dst)?;
-    for entry in fs::read_dir(src)? {
-        let entry = entry?;
-        let path = entry.path();
-        let target = dst.join(entry.file_name());
-        if path.is_dir() {
-            copy_dir_recursive(&path, &target)?;
-        } else {
-            fs::copy(&path, &target)?;
-        }
-    }
-    Ok(())
-}
-
 fn find_index(haystack: &str, needle: &str) -> Option<usize> {
     haystack.find(needle)
 }
@@ -49,7 +34,7 @@ fn git_available() -> bool {
 
 #[test]
 fn test_single_file_directory() {
-    let root = fixture_path("single_file_dir");
+    let root = fixture_path("single_file");
     let output = pack_output(
         &root,
         BudgetTarget::Tokens(500),
@@ -57,7 +42,20 @@ fn test_single_file_directory() {
         false,
         true,
     );
-    assert!(output.contains("foo:{bar.rs}"));
+    assert!(output.contains("sub:{only.rs}"));
+}
+
+#[test]
+fn test_very_deep_nesting() {
+    let root = fixture_path("deep");
+    let output = pack_output(
+        &root,
+        BudgetTarget::Tokens(500),
+        Config::default(),
+        false,
+        true,
+    );
+    assert!(output.contains("a/b/c/d/e/f:{deep.rs}"));
 }
 
 #[test]
@@ -75,13 +73,9 @@ fn test_spine_exceeds_budget() {
 }
 
 #[test]
-fn test_empty_directories_listed() {
+fn test_empty_directory() {
     let temp = TempDir::new().expect("tempdir");
-    let src = fixture_path("empty_dirs");
-    copy_dir_recursive(&src, temp.path()).expect("copy fixture");
-    // Remove the placeholder to create a truly empty directory.
-    let placeholder = temp.path().join("empty").join(".gitkeep");
-    let _ = fs::remove_file(placeholder);
+    fs::create_dir_all(temp.path().join("empty")).expect("create empty dir");
 
     let output = pack_output(
         temp.path(),
@@ -258,7 +252,7 @@ fn test_duplicate_names_disambiguated() {
 }
 
 #[test]
-fn test_minimum_budget_no_panic() {
+fn test_minimal_budget() {
     let root = fixture_path("root_only");
     let output = pack_output(
         &root,

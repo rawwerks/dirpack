@@ -80,6 +80,7 @@ pub struct ScanningConfig {
     pub include_hidden: bool,
     pub max_depth: usize,
     pub follow_symlinks: bool,
+    pub no_git_safety: bool,
 }
 
 impl Default for ScanningConfig {
@@ -89,6 +90,7 @@ impl Default for ScanningConfig {
             include_hidden: false,
             max_depth: 20,
             follow_symlinks: false,
+            no_git_safety: true,
         }
     }
 }
@@ -261,4 +263,19 @@ fn default_priority_rules() -> Vec<PriorityRule> {
             priority: 10,
         },
     ]
+}
+
+const SECURITY_EXCLUDE_PATTERNS: &[&str] = &[
+    ".env",
+    ".env.*",
+    "*.pem",
+    "*.key",
+    "credentials*",
+];
+
+pub fn security_exclude_patterns() -> Vec<String> {
+    SECURITY_EXCLUDE_PATTERNS
+        .iter()
+        .map(|pattern| pattern.to_string())
+        .collect()
 }

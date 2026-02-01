@@ -8,24 +8,36 @@ pub mod walk;
 
 use std::path::{Path, PathBuf};
 
-use crate::config::ScanningConfig;
+use crate::config::{security_exclude_patterns, Config, ScanningConfig};
 pub use entry::{FileEntry, Representation};
+use ignore::gitignore::{Gitignore, GitignoreBuilder};
 
 /// Scan a directory, preferring git ls-files if available.
-pub fn scan(root: &Path, config: &ScanningConfig, use_git: bool) -> Vec<FileEntry> {
+pub fn scan(root: &Path, config: &Config, use_git: bool) -> Vec<FileEntry> {
+    let mut effective_scanning = config.scanning.clone();
+    if !use_git {
+        effective_scanning.use_gitignore = false;
+        if effective_scanning.no_git_safety {
+            effective_scanning.include_hidden = true;
+        }
+    }
+
     // Try git first if enabled
     let entries = if use_git {
         if let Some(entries) = git::scan_git(root) {
             entries
         } else {
-            walk::scan_walk(root, config)
+            walk::scan_walk(root, &effective_scanning)
         }
     } else {
         // Fall back to walking
-        walk::scan_walk(root, config)
+        walk::scan_walk(root, &effective_scanning)
     };
 
-    filter_hidden_entries(entries, root, config.include_hidden)
+    let exclude_patterns = build_exclude_patterns(config, use_git);
+    let entries = apply_excludes(entries, root, &exclude_patterns);
+
+    filter_hidden_entries(entries, root, effective_scanning.include_hidden)
 }
 
 /// Filter entries to only include files (not directories).
@@ -57,8 +69,10 @@ fn filter_hidden_entries(
         let rel = entry.relative_path.clone();
         if let Some(hidden_root) = first_hidden_prefix(&rel) {
             hidden_roots.insert(hidden_root.clone());
-            if include_hidden && entry.is_dir && rel == hidden_root {
-                entry.representation = Representation::NameOnly;
+            if include_hidden {
+                if entry.is_dir && rel == hidden_root {
+                    entry.representation = Representation::NameOnly;
+                }
                 seen_paths.insert(rel.clone());
                 output.push(entry);
             }
@@ -82,6 +96,47 @@ fn filter_hidden_entries(
 
     output.sort_by(|a, b| a.relative_path.cmp(&b.relative_path));
     output
+}
+
+fn build_exclude_patterns(config: &Config, use_git: bool) -> Vec<String> {
+    let mut patterns = Vec::new();
+    if use_git {
+        patterns.extend(config.exclude.patterns.clone());
+    }
+    patterns.extend(security_exclude_patterns());
+    patterns
+}
+
+fn apply_excludes(entries: Vec<FileEntry>, root: &Path, patterns: &[String]) -> Vec<FileEntry> {
+    if patterns.is_empty() {
+        return entries;
+    }
+
+    let matcher = build_matcher(root, patterns);
+    if matcher.is_none() {
+        return entries;
+    }
+    let matcher = matcher.unwrap();
+
+    entries
+        .into_iter()
+        .filter(|entry| {
+            let matched = matcher.matched_path_or_any_parents(&entry.relative_path, entry.is_dir);
+            !matched.is_ignore()
+        })
+        .collect()
+}
+
+fn build_matcher(root: &Path, patterns: &[String]) -> Option<Gitignore> {
+    if patterns.is_empty() {
+        return None;
+    }
+
+    let mut builder = GitignoreBuilder::new(root);
+    for pattern in patterns {
+        let _ = builder.add_line(None, pattern);
+    }
+    builder.build().ok()
 }
 
 fn first_hidden_prefix(path: &Path) -> Option<PathBuf> {

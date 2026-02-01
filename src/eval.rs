@@ -40,7 +40,7 @@ pub struct EvalMetrics {
 pub fn evaluate(path: &Path, budgets: &[usize]) -> EvalReport {
     let repo = path.to_string_lossy().to_string();
     let config = Config::default();
-    let entries = scanner::scan(path, &config.scanning, true);
+    let entries = scanner::scan(path, &config, true);
     let entry_points = find_entry_points(&entries);
 
     let mut results = Vec::new();

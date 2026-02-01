@@ -142,7 +142,7 @@ fn run_tree(args: dirpack::cli::TreeArgs) -> anyhow::Result<()> {
     let root = args.path.canonicalize().unwrap_or(args.path.clone());
     let config = Config::default();
 
-    let entries = dirpack::scanner::scan(&root, &config.scanning, true);
+    let entries = dirpack::scanner::scan(&root, &config, true);
 
     let tree = dirpack::packer::spine::format_tree_ascii(&entries);
     println!("{}", tree);

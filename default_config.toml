@@ -10,6 +10,7 @@ use_gitignore = true      # Respect .gitignore
 include_hidden = false    # Include .dotfiles/dirs
 max_depth = 20            # Max recursion depth
 follow_symlinks = false
+no_git_safety = true      # Apply safety exclusions in --no-git mode
 
 # File categories - used for prioritization and signature extraction
 [categories.code]

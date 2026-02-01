@@ -62,7 +62,7 @@ pub fn pack(
     let root_str = root.to_string_lossy();
 
     // Phase 1: Scan directory
-    let entries = scanner::scan(root, &config.scanning, use_git);
+    let entries = scanner::scan(root, config, use_git);
     let files: Vec<_> = entries.iter().filter(|e| !e.is_dir).cloned().collect();
     let mut files_by_priority = files.clone();
 

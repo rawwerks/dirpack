@@ -172,18 +172,22 @@ echo "}" >> "$OUTPUT_FILE"
 
 echo "Eval complete. Results in: $OUTPUT_FILE" >&2
 
-# Qualitative review reminder
+# ACTUAL OUTPUT SAMPLES - forces you to look at what you're shipping
 echo "" >&2
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-echo "📋 REQUIRED: Qualitative Review (dogfooding)" >&2
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-echo "Run: $DIRPACK pack . -t 2000" >&2
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+echo "📋 ACTUAL OUTPUT (500 tokens) - READ THIS BEFORE SHIPPING" >&2
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+$DIRPACK pack "$TARGET" -t 500 2>/dev/null | tr '|' '\n' | head -30 >&2
+echo "..." >&2
 echo "" >&2
-echo "Check:" >&2
-echo "  [ ] Is README.md/DESIGN.md content visible?" >&2
-echo "  [ ] Are there duplicate signatures?" >&2
-echo "  [ ] Priority sensible? (core > tests)" >&2
-echo "  [ ] Would a new dev understand the architecture?" >&2
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+echo "📋 ACTUAL OUTPUT (2000 tokens) - SIGNATURES VISIBLE?" >&2
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+$DIRPACK pack "$TARGET" -t 2000 2>/dev/null | tr '|' '\n' | tail -20 >&2
 echo "" >&2
-echo "Metrics PASS ≠ output is good. Look at it!" >&2
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+echo "CHECKLIST - metrics PASS ≠ output is good:" >&2
+echo "  [ ] Files in tree make sense? (not truncated arbitrarily)" >&2
+echo "  [ ] Signatures are clean? (no stub code, no 'pass' statements)" >&2
+echo "  [ ] Would YOU want to receive this output?" >&2
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2

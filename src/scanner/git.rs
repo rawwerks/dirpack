@@ -4,6 +4,7 @@ use std::path::Path;
 use std::process::Command;
 
 use crate::scanner::entry::FileEntry;
+use crate::security;
 
 /// Check if a directory is a git repository.
 pub fn is_git_repo(root: &Path) -> bool {
@@ -49,6 +50,9 @@ pub fn scan_git(root: &Path) -> Option<Vec<FileEntry>> {
             Err(_) => continue,
         };
         if metadata.file_type().is_symlink() {
+            continue;
+        }
+        if security::validate_archive_entry_metadata(&path, &metadata).is_err() {
             continue;
         }
         let is_dir = metadata.is_dir();

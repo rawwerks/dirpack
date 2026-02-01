@@ -5,6 +5,7 @@ use std::path::Path;
 use ignore::WalkBuilder;
 
 use crate::config::ScanningConfig;
+use crate::security;
 use crate::scanner::entry::FileEntry;
 
 /// Scan a directory using the ignore crate (respects .gitignore).
@@ -42,12 +43,17 @@ pub fn scan_walk(root: &Path, config: &ScanningConfig) -> Vec<FileEntry> {
             continue;
         }
 
-        let is_dir = entry.file_type().is_some_and(|ft| ft.is_dir());
-        let size = if is_dir {
-            0
-        } else {
-            entry.metadata().map(|m| m.len()).unwrap_or(0)
+        let metadata = match entry.metadata() {
+            Ok(m) => m,
+            Err(_) => continue,
         };
+
+        if security::validate_archive_entry_metadata(path, &metadata).is_err() {
+            continue;
+        }
+
+        let is_dir = metadata.is_dir();
+        let size = if is_dir { 0 } else { metadata.len() };
 
         entries.push(FileEntry::new(path, root, is_dir, size));
     }

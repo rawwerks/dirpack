@@ -80,8 +80,9 @@ pub struct Signature {
 
 impl Signature {
     /// Create a compact representation for pipe-delimited output.
+    /// Collapses all whitespace (newlines, indentation) to single spaces.
     pub fn compact(&self) -> String {
-        self.text.clone()
+        self.text.split_whitespace().collect::<Vec<_>>().join(" ")
     }
 
     /// Truncate the signature text to a maximum length.

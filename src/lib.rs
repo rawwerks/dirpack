@@ -7,6 +7,7 @@ pub mod format;
 pub mod packer;
 pub mod priority;
 pub mod scanner;
+pub mod security;
 pub mod tokenizer;
 
 pub use crate::config::{Config, OutputFormat};

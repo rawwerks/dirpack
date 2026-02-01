@@ -8,7 +8,7 @@ pub mod walk;
 
 use std::path::{Path, PathBuf};
 
-use crate::config::{security_exclude_patterns, Config, ScanningConfig};
+use crate::config::{security_exclude_patterns, Config};
 pub use entry::{FileEntry, Representation};
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 

@@ -171,3 +171,19 @@ echo "  ]" >> "$OUTPUT_FILE"
 echo "}" >> "$OUTPUT_FILE"
 
 echo "Eval complete. Results in: $OUTPUT_FILE" >&2
+
+# Qualitative review reminder
+echo "" >&2
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+echo "📋 REQUIRED: Qualitative Review (dogfooding)" >&2
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+echo "Run: $DIRPACK pack . -t 2000" >&2
+echo "" >&2
+echo "Check:" >&2
+echo "  [ ] Is README.md/DESIGN.md content visible?" >&2
+echo "  [ ] Are there duplicate signatures?" >&2
+echo "  [ ] Priority sensible? (core > tests)" >&2
+echo "  [ ] Would a new dev understand the architecture?" >&2
+echo "" >&2
+echo "Metrics PASS ≠ output is good. Look at it!" >&2
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2

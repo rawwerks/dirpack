@@ -44,10 +44,13 @@ pub fn scan_git(root: &Path) -> Option<Vec<FileEntry>> {
             continue;
         }
 
-        let metadata = match path.metadata() {
+        let metadata = match path.symlink_metadata() {
             Ok(m) => m,
             Err(_) => continue,
         };
+        if metadata.file_type().is_symlink() {
+            continue;
+        }
         let is_dir = metadata.is_dir();
         let size = if is_dir { 0 } else { metadata.len() };
 

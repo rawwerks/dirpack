@@ -15,6 +15,8 @@ use ignore::gitignore::{Gitignore, GitignoreBuilder};
 /// Scan a directory, preferring git ls-files if available.
 pub fn scan(root: &Path, config: &Config, use_git: bool) -> Vec<FileEntry> {
     let mut effective_scanning = config.scanning.clone();
+    // Never follow symlinks, regardless of user configuration.
+    effective_scanning.follow_symlinks = false;
     if !use_git {
         effective_scanning.use_gitignore = false;
         if effective_scanning.no_git_safety {

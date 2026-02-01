@@ -33,6 +33,9 @@ pub fn scan_walk(root: &Path, config: &ScanningConfig) -> Vec<FileEntry> {
         };
 
         let path = entry.path();
+        if entry.file_type().is_some_and(|ft| ft.is_symlink()) {
+            continue;
+        }
 
         // Skip the root directory itself
         if path == root {

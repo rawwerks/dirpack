@@ -1,0 +1,15 @@
+# Diverse directories for dogfood eval
+# Mix of: GitHub repos, regular dirs, obsidian notes
+# Format: path|type|description
+
+# GitHub repos (code)
+/home/raw/Documents/GitHub/beads|go-repo|Git-backed issue tracker CLI
+/home/raw/Documents/GitHub/ck|rust-repo|Semantic code search tool
+/home/raw/Documents/GitHub/destructive_command_guard|rust-repo|Safety tool blocking dangerous commands
+
+# Regular directories (scripts/config)
+/home/raw/raw-agent-private/scripts|scripts|Agent automation scripts
+/home/raw/.claude/skills|config|Installed Claude Code skills
+
+# Obsidian notes
+/home/raw/Documents/raw-obsidian-sync/cass-export-MacBook-Air-6-20251214|notes|Beads-related notes and docs

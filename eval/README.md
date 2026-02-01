@@ -37,3 +37,46 @@ Generate a fresh baseline with:
 ```bash
 cargo run -- eval <path> --budgets 500,1000,2000,4000 --pretty
 ```
+
+## Qualitative Review (MANDATORY)
+
+**After quantitative tests PASS**, you MUST run a dogfood check:
+
+```bash
+./target/release/dirpack pack . -b 2000
+```
+
+Review the output and answer these questions:
+
+### Checklist
+
+1. **README.md content visible?**
+   - The main README.md should have content or headings in output
+   - Test fixture READMEs should NOT appear before main README
+
+2. **No duplicate signatures?**
+   - Scan for repeated function/struct names
+   - Each signature should appear exactly once
+
+3. **Priority makes sense?**
+   - Core code (src/) should have more coverage than tests/fixtures/
+   - Entry points (main.rs, lib.rs, mod.rs) should appear early
+   - Documentation (README, DESIGN) should be prioritized over config files
+
+4. **Architecture understandable?**
+   - Could a new developer figure out where to start?
+   - Are the main modules and their relationships clear?
+   - Is there enough context to understand the codebase purpose?
+
+### Failure Criteria
+
+If ANY of these are true, the PR is NOT ready:
+- Main README.md has no content in output
+- Duplicate signatures waste budget
+- Test fixtures prioritized over core code
+- Output is unreadable wall of text with no structure
+
+### Rating
+
+Rate the output 1-10 for "usefulness as codebase onboarding aid".
+Target: **7+** before merge to main.

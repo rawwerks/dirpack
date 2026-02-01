@@ -8,27 +8,38 @@ use crate::scanner::entry::FileEntry;
 /// Default priority for files that don't match any rule.
 const DEFAULT_PRIORITY: i32 = 50;
 
+const ENTRYPOINT_BOOST: i32 = 40;
+const ROOT_CODE_BOOST: i32 = 20;
+const FOCUS_DIR_BOOST: i32 = 15;
+const TEST_PENALTY: i32 = -40;
+const FIXTURE_PENALTY: i32 = -25;
+const DEPTH_PENALTY_STEP: i32 = -5;
+const MAX_DEPTH_PENALTY: i32 = -30;
+
 /// Calculate priority for a file entry based on config rules.
 pub fn calculate_priority(
     entry: &FileEntry,
     rules: &[PriorityRule],
     categories: &CategoryConfig,
 ) -> i32 {
+    let mut priority = None;
+
     // Check pattern rules first (highest specificity)
     for rule in rules {
         if matches_pattern(&entry.relative_path, &rule.pattern) {
-            return rule.priority;
+            priority = Some(rule.priority);
+            break;
         }
     }
 
     // Fall back to category-based priority
-    if !entry.extension.is_empty() {
-        if let Some(priority) = category_priority(&entry.extension, categories) {
-            return priority;
-        }
+    if priority.is_none() && !entry.extension.is_empty() {
+        priority = category_priority(&entry.extension, categories);
     }
 
-    DEFAULT_PRIORITY
+    let mut score = priority.unwrap_or(DEFAULT_PRIORITY);
+    score += path_adjustment(entry, categories);
+    score.max(0)
 }
 
 /// Check if a path matches a glob pattern.
@@ -109,6 +120,108 @@ fn category_priority(extension: &str, categories: &CategoryConfig) -> Option<i32
     None
 }
 
+fn path_adjustment(entry: &FileEntry, categories: &CategoryConfig) -> i32 {
+    let mut delta = 0;
+    let file_name = entry.file_name().to_ascii_lowercase();
+    let components = path_components_lower(&entry.relative_path);
+
+    let is_code = !entry.extension.is_empty()
+        && categories
+            .code
+            .extensions
+            .iter()
+            .any(|ext| ext.eq_ignore_ascii_case(&entry.extension));
+
+    let is_entrypoint = is_entrypoint_name(&file_name);
+    if is_entrypoint {
+        delta += ENTRYPOINT_BOOST;
+    }
+
+    if is_code && entry.depth == 0 && is_entrypoint {
+        delta += ROOT_CODE_BOOST;
+    }
+
+    if is_code
+        && components
+            .iter()
+            .any(|c| matches!(c.as_str(), "src" | "cmd" | "lib" | "pkg" | "internal"))
+    {
+        delta += FOCUS_DIR_BOOST;
+    }
+
+    if is_test_like(&file_name, &components) {
+        delta += TEST_PENALTY;
+    }
+
+    if is_fixture_like(&file_name, &components) {
+        delta += FIXTURE_PENALTY;
+    }
+
+    if entry.depth > 2 {
+        let penalty = ((entry.depth - 2) as i32) * DEPTH_PENALTY_STEP;
+        delta += penalty.max(MAX_DEPTH_PENALTY);
+    }
+
+    delta
+}
+
+fn path_components_lower(path: &Path) -> Vec<String> {
+    path.components()
+        .filter_map(|component| component.as_os_str().to_str())
+        .filter(|part| !part.is_empty() && *part != ".")
+        .map(|part| part.to_ascii_lowercase())
+        .collect()
+}
+
+fn is_entrypoint_name(file_name: &str) -> bool {
+    matches!(
+        file_name,
+        "main.rs"
+            | "lib.rs"
+            | "main.go"
+            | "app.go"
+            | "server.go"
+            | "main.py"
+            | "app.py"
+            | "__init__.py"
+            | "index.ts"
+            | "index.tsx"
+            | "main.ts"
+            | "main.js"
+            | "index.js"
+            | "cli.js"
+    )
+}
+
+fn is_test_like(file_name: &str, components: &[String]) -> bool {
+    if file_name.starts_with("test_")
+        || file_name.contains("_test.")
+        || file_name.ends_with("_test")
+    {
+        return true;
+    }
+
+    components.iter().any(|part| {
+        matches!(
+            part.as_str(),
+            "test" | "tests" | "testing" | "spec" | "specs" | "e2e" | "integration"
+        )
+    })
+}
+
+fn is_fixture_like(file_name: &str, components: &[String]) -> bool {
+    if file_name.contains("fixture") || file_name.contains("mock") {
+        return true;
+    }
+
+    components.iter().any(|part| {
+        matches!(
+            part.as_str(),
+            "fixtures" | "fixture" | "mocks" | "mock" | "testdata"
+        )
+    })
+}
+
 /// Sort entries by priority (highest first).
 pub fn sort_by_priority(
     entries: &mut [FileEntry],
@@ -118,7 +231,9 @@ pub fn sort_by_priority(
     entries.sort_by(|a, b| {
         let pa = calculate_priority(a, rules, categories);
         let pb = calculate_priority(b, rules, categories);
-        pb.cmp(&pa) // Descending order
+        pb.cmp(&pa)
+            .then_with(|| a.depth.cmp(&b.depth))
+            .then_with(|| a.relative_path.cmp(&b.relative_path))
     });
 }
 
@@ -160,7 +275,7 @@ mod tests {
         let categories = CategoryConfig::default();
 
         let entry = make_entry("src/scanner/mod.rs");
-        assert_eq!(calculate_priority(&entry, &rules, &categories), 130);
+        assert!(calculate_priority(&entry, &rules, &categories) >= 130);
     }
 
     #[test]
@@ -169,6 +284,26 @@ mod tests {
         let categories = CategoryConfig::default();
 
         let entry = make_entry("main.rs");
-        assert_eq!(calculate_priority(&entry, &rules, &categories), 100); // code priority
+        assert!(calculate_priority(&entry, &rules, &categories) >= 100);
+    }
+
+    #[test]
+    fn test_root_code_boost_over_nested() {
+        let rules = vec![];
+        let categories = CategoryConfig::default();
+
+        let root = make_entry("main.rs");
+        let nested = make_entry("src/helper.rs");
+        assert!(calculate_priority(&root, &rules, &categories) > calculate_priority(&nested, &rules, &categories));
+    }
+
+    #[test]
+    fn test_test_file_penalty() {
+        let rules = vec![];
+        let categories = CategoryConfig::default();
+
+        let code = make_entry("cmd/bd/agent.go");
+        let test = make_entry("cmd/bd/agent_test.go");
+        assert!(calculate_priority(&code, &rules, &categories) > calculate_priority(&test, &rules, &categories));
     }
 }

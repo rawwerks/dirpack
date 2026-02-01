@@ -3,7 +3,7 @@
 //! Extracts function signatures, struct definitions, traits, interfaces,
 //! and other important code constructs from source files.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use streaming_iterator::StreamingIterator;
 use thiserror::Error;
@@ -191,7 +191,7 @@ impl SignatureExtractor {
             }
         }
 
-        Ok(signatures)
+        Ok(dedup_signatures(signatures))
     }
 
     fn process_match(
@@ -718,6 +718,27 @@ impl SignatureExtractor {
     }
 }
 
+fn dedup_signatures(signatures: Vec<Signature>) -> Vec<Signature> {
+    let mut seen: HashSet<String> = HashSet::new();
+    let mut output = Vec::new();
+
+    for sig in signatures {
+        let key = format!(
+            "{}|{}|{}|{}|{}",
+            sig.kind,
+            sig.name,
+            sig.text,
+            sig.line,
+            sig.visibility.as_deref().unwrap_or("")
+        );
+        if seen.insert(key) {
+            output.push(sig);
+        }
+    }
+
+    output
+}
+
 impl Default for SignatureExtractor {
     fn default() -> Self {
         Self::new().expect("failed to initialize signature extractor")
@@ -1010,5 +1031,20 @@ This is H4, should be skipped.
         assert!(names.contains(&"Simple"), "basic H1");
         assert!(names.contains(&"With Trailing"), "trailing hashes removed");
         assert!(!names.contains(&"NoSpace"), "no space after # means not a heading");
+    }
+
+    #[test]
+    fn test_dedup_signatures() {
+        let sig = Signature {
+            kind: SignatureKind::Function,
+            name: "new".to_string(),
+            text: "pub fn new(target: BudgetTarget) -> Self".to_string(),
+            line: 10,
+            visibility: Some("pub".to_string()),
+        };
+        let sigs = vec![sig.clone(), sig];
+        let deduped = super::dedup_signatures(sigs);
+        assert_eq!(deduped.len(), 1);
+        assert_eq!(deduped[0].name, "new");
     }
 }

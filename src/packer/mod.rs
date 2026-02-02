@@ -333,7 +333,8 @@ fn add_tree_segments(
                 top_level_dirs.insert(file_name);
             }
         } else {
-            if entry_point_names.contains(&file_name) {
+            // Only mark core directories (not test/fixture) as entry-point dirs
+            if entry_point_names.contains(&file_name) && !is_test_or_fixture_path(&parent) {
                 entry_point_dirs.insert(parent.clone());
             }
             dirs_by_depth
@@ -361,6 +362,7 @@ fn add_tree_segments(
     let mut processed_dirs: BTreeSet<String> = BTreeSet::new();
 
     // Ensure entry-point directories are emitted first
+    // (test/fixture dirs are excluded from entry_point_dirs)
     for entry_dir in entry_point_dirs.iter() {
         let mut files_for_dir: Option<BTreeSet<String>> = None;
         for (_depth, dirs_at_level) in &dirs_by_depth {
@@ -446,6 +448,20 @@ fn add_tree_segments(
     }
 
     stats
+}
+
+/// Check if a directory path is test or fixture related.
+fn is_test_or_fixture_path(path: &str) -> bool {
+    let lower = path.to_lowercase();
+    let parts: Vec<&str> = lower.split('/').collect();
+    parts.iter().any(|part| {
+        matches!(
+            *part,
+            "test" | "tests" | "testing" | "spec" | "specs" | "e2e"
+            | "fixtures" | "fixture" | "mocks" | "mock" | "testdata"
+            | "__tests__" | "__mocks__"
+        )
+    })
 }
 
 fn collect_entry_point_names(files: &[FileEntry]) -> std::collections::BTreeSet<String> {

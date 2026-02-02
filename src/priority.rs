@@ -10,9 +10,12 @@ const DEFAULT_PRIORITY: i32 = 50;
 
 const ENTRYPOINT_BOOST: i32 = 40;
 const ROOT_CODE_BOOST: i32 = 20;
+const ROOT_FILE_BOOST: i32 = 15;
+const ROOT_SRC_BOOST: i32 = 25;
 const FOCUS_DIR_BOOST: i32 = 15;
 const TEST_PENALTY: i32 = -40;
 const FIXTURE_PENALTY: i32 = -25;
+const TEST_FIXTURE_PENALTY: i32 = -80;
 const DEPTH_PENALTY_STEP: i32 = -5;
 const MAX_DEPTH_PENALTY: i32 = -30;
 
@@ -141,6 +144,14 @@ fn path_adjustment(entry: &FileEntry, categories: &CategoryConfig) -> i32 {
         delta += ROOT_CODE_BOOST;
     }
 
+    if components.len() == 1 {
+        delta += ROOT_FILE_BOOST;
+    }
+
+    if is_code && matches!(components.first().map(|c| c.as_str()), Some("src")) {
+        delta += ROOT_SRC_BOOST;
+    }
+
     if is_code
         && components
             .iter()
@@ -155,6 +166,10 @@ fn path_adjustment(entry: &FileEntry, categories: &CategoryConfig) -> i32 {
 
     if is_fixture_like(&file_name, &components) {
         delta += FIXTURE_PENALTY;
+    }
+
+    if is_test_fixture_path(&components) {
+        delta += TEST_FIXTURE_PENALTY;
     }
 
     if entry.depth > 2 {
@@ -222,6 +237,15 @@ fn is_fixture_like(file_name: &str, components: &[String]) -> bool {
     })
 }
 
+fn is_test_fixture_path(components: &[String]) -> bool {
+    components
+        .windows(2)
+        .any(|pair| {
+            matches!(pair[0].as_str(), "tests" | "test")
+                && matches!(pair[1].as_str(), "fixtures" | "fixture" | "testdata")
+        })
+}
+
 /// Sort entries by priority (highest first).
 pub fn sort_by_priority(
     entries: &mut [FileEntry],
@@ -263,7 +287,8 @@ mod tests {
         let categories = CategoryConfig::default();
 
         let entry = make_entry("README.md");
-        assert_eq!(calculate_priority(&entry, &rules, &categories), 200);
+        // 200 (pattern match) + ROOT_FILE_BOOST (15) = 215
+        assert_eq!(calculate_priority(&entry, &rules, &categories), 215);
     }
 
     #[test]

@@ -33,20 +33,22 @@ jobs:
           for tokens in 1000 2000 5000; do
             ./target/release/dirpack pack . \
               -t $tokens \
-              -o examples/dirpack-${tokens}tok.txt \
               --title "dirpack repo (${tokens} tokens)" \
               -e "examples/*" \
-              -e "target/*"
+              -e "target/*" \
+            | sed "s|root: $PWD|root: .|" \
+            > examples/dirpack-${tokens}tok.txt
           done
 
           # Also generate JSON format for 2k
           ./target/release/dirpack pack . \
             -t 2000 \
             -f json \
-            -o examples/dirpack-2000tok.json \
             --title "dirpack repo (2000 tokens, JSON)" \
             -e "examples/*" \
-            -e "target/*"
+            -e "target/*" \
+          | sed "s|$PWD|.|g" \
+          > examples/dirpack-2000tok.json
 
       - name: Commit examples
         run: |

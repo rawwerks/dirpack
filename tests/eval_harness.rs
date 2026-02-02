@@ -47,3 +47,14 @@ fn visual_inspection_2000t() {
     println!("{}", output);
     println!("━━━ END ━━━\n");
 }
+
+#[test]
+fn eval_with_visual_inspection() {
+    let status = std::process::Command::new("./scripts/eval.sh")
+        .arg("tests/fixtures/small_project")
+        .arg("/dev/null")
+        .status()
+        .expect("eval.sh failed to run");
+
+    assert!(status.success(), "eval.sh failed");
+}

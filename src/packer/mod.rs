@@ -35,13 +35,54 @@ use signatures::SignatureExtractor;
 // Tree budget ratio (30% to account for header overhead and ensure ≤40% in output)
 const TREE_BUDGET_RATIO: f64 = 0.30;
 
+/// Truncation information showing what was cut.
+#[derive(Debug, Default)]
+pub struct TruncationInfo {
+    /// Total files scanned
+    pub files_scanned: usize,
+    /// Files listed in tree segments
+    pub files_in_tree: usize,
+    /// Files with signatures added
+    pub files_with_signatures: usize,
+    /// Directories that didn't fit in tree budget
+    pub dirs_truncated: usize,
+}
+
+impl TruncationInfo {
+    /// Returns true if anything was truncated.
+    pub fn has_truncation(&self) -> bool {
+        self.files_in_tree < self.files_scanned || self.dirs_truncated > 0
+    }
+
+    /// Format as a compact indicator for the output.
+    pub fn format_indicator(&self) -> Option<String> {
+        if !self.has_truncation() {
+            return None;
+        }
+
+        let files_hidden = self.files_scanned.saturating_sub(self.files_in_tree);
+        if files_hidden > 0 {
+            Some(format!("[+{} files not shown]", files_hidden))
+        } else if self.dirs_truncated > 0 {
+            Some(format!("[+{} dirs truncated]", self.dirs_truncated))
+        } else {
+            None
+        }
+    }
+}
+
 /// Result of packing a directory.
 pub struct PackResult {
     pub output: String,
     pub budget_used: usize,
     pub budget_limit: usize,
     pub files_included: usize,
+    pub truncation: TruncationInfo,
 }
+
+// Tokens reserved for truncation indicator (only for larger budgets)
+const TRUNCATION_INDICATOR_RESERVE: usize = 15;
+const MIN_BUDGET_FOR_RESERVE: usize = 200;
 
 /// Pack a directory into a budgeted index.
 pub fn pack(
@@ -51,7 +92,17 @@ pub fn pack(
     use_git: bool,
     include_signatures: bool,
 ) -> PackResult {
-    let mut budget = Budget::new(budget_target);
+    // Reserve space for truncation indicator (only for larger budgets)
+    let effective_target = match budget_target {
+        BudgetTarget::Tokens(t) if t >= MIN_BUDGET_FOR_RESERVE => {
+            BudgetTarget::Tokens(t.saturating_sub(TRUNCATION_INDICATOR_RESERVE))
+        }
+        BudgetTarget::Bytes(b) if b >= MIN_BUDGET_FOR_RESERVE => {
+            BudgetTarget::Bytes(b.saturating_sub(TRUNCATION_INDICATOR_RESERVE * 4))
+        }
+        other => other, // No reserve for small budgets
+    };
+    let mut budget = Budget::new(effective_target);
 
     // Get project title from directory name
     let title = root
@@ -126,7 +177,14 @@ pub fn pack(
         BudgetTarget::Tokens(_) => Budget::tokens(tree_limit),
         BudgetTarget::Bytes(_) => Budget::bytes(tree_limit),
     };
-    add_tree_segments(
+
+    // Track truncation info
+    let mut truncation = TruncationInfo {
+        files_scanned: files.len(),
+        ..Default::default()
+    };
+
+    let tree_stats = add_tree_segments(
         &entries,
         &entry_point_names,
         &mut segments,
@@ -134,6 +192,8 @@ pub fn pack(
         &mut tree_budget,
         &mut push_segment,
     );
+    truncation.files_in_tree = tree_stats.files_shown;
+    truncation.dirs_truncated = tree_stats.dirs_skipped;
 
     // Phase 2: SIGNATURES
     // Add signatures incrementally - fit as many as possible per file
@@ -176,6 +236,7 @@ pub fn pack(
                         if !sig_texts.is_empty() {
                             let segment = format!("{}:{}", rel_path, sig_texts.join(","));
                             push_segment(&mut segments, &mut budget, segment);
+                            truncation.files_with_signatures += 1;
                         }
                         // Continue to next file even if nothing fit
                     }
@@ -184,15 +245,26 @@ pub fn pack(
         }
     }
 
+    // Add truncation indicator if anything was cut
+    // Space was reserved upfront via TRUNCATION_INDICATOR_RESERVE
+    if let Some(indicator) = truncation.format_indicator() {
+        segments.push(indicator);
+    }
+
     let output = segments.join("|");
-    let budget_used = budget.used;
-    let budget_limit = budget.limit();
+
+    // Report actual usage against original limit (not the reduced one)
+    let original_limit = match budget_target {
+        BudgetTarget::Tokens(t) => t,
+        BudgetTarget::Bytes(b) => b,
+    };
 
     PackResult {
         output,
-        budget_used,
-        budget_limit,
+        budget_used: budget.used,
+        budget_limit: original_limit,
         files_included: files.len(),
+        truncation,
     }
 }
 
@@ -208,6 +280,12 @@ pub fn pack_default(root: &Path, target_tokens: usize) -> PackResult {
     )
 }
 
+/// Statistics from tree segment generation.
+struct TreeStats {
+    files_shown: usize,
+    dirs_skipped: usize,
+}
+
 fn add_tree_segments(
     entries: &[FileEntry],
     entry_point_names: &std::collections::BTreeSet<String>,
@@ -215,11 +293,18 @@ fn add_tree_segments(
     budget: &mut Budget,
     tree_budget: &mut Budget,
     push_segment: &mut dyn FnMut(&mut Vec<String>, &mut Budget, String) -> bool,
-) {
+) -> TreeStats {
     use std::collections::{BTreeMap, BTreeSet};
 
+    let mut stats = TreeStats {
+        files_shown: 0,
+        dirs_skipped: 0,
+    };
+
     if tree_budget.limit() == 0 || tree_budget.remaining() == 0 {
-        return;
+        // Count all non-dir entries as not shown
+        stats.files_shown = 0;
+        return stats;
     }
 
     // Group files by parent directory, tracking depth for priority
@@ -284,10 +369,12 @@ fn add_tree_segments(
         }
         if let Some(files) = files_for_dir {
             if tree_budget.is_exhausted() {
+                stats.dirs_skipped += 1;
                 break;
             }
             let dir_name = if entry_dir.is_empty() { "." } else { entry_dir };
             let mut file_list = files.into_iter().collect::<Vec<_>>();
+            let file_count = file_list.len();
             file_list.sort_by(|a, b| {
                 let a_pri = entry_point_names.contains(a);
                 let b_pri = entry_point_names.contains(b);
@@ -298,13 +385,18 @@ fn add_tree_segments(
                 tree_budget.add(&segment);
                 let _ = push_segment(segments, budget, segment);
                 processed_dirs.insert(entry_dir.clone());
+                stats.files_shown += file_count;
+            } else {
+                stats.dirs_skipped += 1;
             }
         }
     }
 
     for (_depth, dirs_at_level) in dirs_by_depth {
         if tree_budget.is_exhausted() {
-            break;
+            // Count remaining dirs as skipped
+            stats.dirs_skipped += dirs_at_level.len();
+            continue;
         }
         let mut dirs_vec: Vec<(String, BTreeSet<String>)> = dirs_at_level.into_iter().collect();
         dirs_vec.sort_by(|(a_dir, _), (b_dir, _)| {
@@ -315,7 +407,8 @@ fn add_tree_segments(
 
         for (dir, files) in dirs_vec {
             if tree_budget.is_exhausted() {
-                break;
+                stats.dirs_skipped += 1;
+                continue;
             }
             if processed_dirs.contains(&dir) {
                 continue;
@@ -323,6 +416,7 @@ fn add_tree_segments(
 
             let dir_name = if dir.is_empty() { "." } else { &dir };
             if !files.is_empty() {
+                let file_count = files.len();
                 let mut file_list = files.into_iter().collect::<Vec<_>>();
                 file_list.sort_by(|a, b| {
                     let a_pri = entry_point_names.contains(a);
@@ -336,13 +430,20 @@ fn add_tree_segments(
                 );
                 if tree_budget.would_fit(&segment) {
                     tree_budget.add(&segment);
-                    if !push_segment(segments, budget, segment) {
+                    if push_segment(segments, budget, segment) {
+                        stats.files_shown += file_count;
+                    } else {
+                        stats.dirs_skipped += 1;
                         break;
                     }
+                } else {
+                    stats.dirs_skipped += 1;
                 }
             }
         }
     }
+
+    stats
 }
 
 fn collect_entry_point_names(files: &[FileEntry]) -> std::collections::BTreeSet<String> {

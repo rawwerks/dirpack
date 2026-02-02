@@ -82,6 +82,18 @@ priority = 50
 pattern = "**/*.lock"
 priority = 10
 
+# Priority weight adjustments - tune scoring for specific file types
+# These modify the base priority score based on file characteristics
+[priority]
+# default_priority = 50       # Base score for files not matching any rule
+# entrypoint_boost = 40       # Bonus for main.rs, lib.rs, index.ts, etc.
+# root_code_boost = 20        # Bonus for code files at repository root
+# focus_dir_boost = 15        # Bonus for files in src/, lib/, cmd/, pkg/
+# test_penalty = -40          # Penalty for test files and directories
+# fixture_penalty = -25       # Penalty for fixture/mock files and directories
+# depth_penalty_step = -5     # Penalty per depth level beyond 2
+# max_depth_penalty = -30     # Maximum total depth penalty
+
 # Exclude patterns (gitignore syntax)
 [exclude]
 patterns = [

@@ -2,25 +2,15 @@
 
 use std::path::Path;
 
-use crate::config::{CategoryConfig, PriorityRule};
+use crate::config::{CategoryConfig, PriorityRule, PriorityWeights};
 use crate::scanner::entry::FileEntry;
 
-/// Default priority for files that don't match any rule.
-const DEFAULT_PRIORITY: i32 = 50;
-
-const ENTRYPOINT_BOOST: i32 = 40;
-const ROOT_CODE_BOOST: i32 = 20;
-const FOCUS_DIR_BOOST: i32 = 15;
-const TEST_PENALTY: i32 = -40;
-const FIXTURE_PENALTY: i32 = -25;
-const DEPTH_PENALTY_STEP: i32 = -5;
-const MAX_DEPTH_PENALTY: i32 = -30;
-
-/// Calculate priority for a file entry based on config rules.
+/// Calculate priority for a file entry based on config rules and weights.
 pub fn calculate_priority(
     entry: &FileEntry,
     rules: &[PriorityRule],
     categories: &CategoryConfig,
+    weights: &PriorityWeights,
 ) -> i32 {
     let mut priority = None;
 
@@ -37,8 +27,8 @@ pub fn calculate_priority(
         priority = category_priority(&entry.extension, categories);
     }
 
-    let mut score = priority.unwrap_or(DEFAULT_PRIORITY);
-    score += path_adjustment(entry, categories);
+    let mut score = priority.unwrap_or(weights.default_priority);
+    score += path_adjustment(entry, categories, weights);
     score.max(0)
 }
 
@@ -120,7 +110,7 @@ fn category_priority(extension: &str, categories: &CategoryConfig) -> Option<i32
     None
 }
 
-fn path_adjustment(entry: &FileEntry, categories: &CategoryConfig) -> i32 {
+fn path_adjustment(entry: &FileEntry, categories: &CategoryConfig, weights: &PriorityWeights) -> i32 {
     let mut delta = 0;
     let file_name = entry.file_name().to_ascii_lowercase();
     let components = path_components_lower(&entry.relative_path);
@@ -134,11 +124,11 @@ fn path_adjustment(entry: &FileEntry, categories: &CategoryConfig) -> i32 {
 
     let is_entrypoint = is_entrypoint_name(&file_name);
     if is_entrypoint {
-        delta += ENTRYPOINT_BOOST;
+        delta += weights.entrypoint_boost;
     }
 
     if is_code && entry.depth == 0 && is_entrypoint {
-        delta += ROOT_CODE_BOOST;
+        delta += weights.root_code_boost;
     }
 
     if is_code
@@ -146,20 +136,20 @@ fn path_adjustment(entry: &FileEntry, categories: &CategoryConfig) -> i32 {
             .iter()
             .any(|c| matches!(c.as_str(), "src" | "cmd" | "lib" | "pkg" | "internal"))
     {
-        delta += FOCUS_DIR_BOOST;
+        delta += weights.focus_dir_boost;
     }
 
     if is_test_like(&file_name, &components) {
-        delta += TEST_PENALTY;
+        delta += weights.test_penalty;
     }
 
     if is_fixture_like(&file_name, &components) {
-        delta += FIXTURE_PENALTY;
+        delta += weights.fixture_penalty;
     }
 
     if entry.depth > 2 {
-        let penalty = ((entry.depth - 2) as i32) * DEPTH_PENALTY_STEP;
-        delta += penalty.max(MAX_DEPTH_PENALTY);
+        let penalty = ((entry.depth - 2) as i32) * weights.depth_penalty_step;
+        delta += penalty.max(weights.max_depth_penalty);
     }
 
     delta
@@ -227,10 +217,11 @@ pub fn sort_by_priority(
     entries: &mut [FileEntry],
     rules: &[PriorityRule],
     categories: &CategoryConfig,
+    weights: &PriorityWeights,
 ) {
     entries.sort_by(|a, b| {
-        let pa = calculate_priority(a, rules, categories);
-        let pb = calculate_priority(b, rules, categories);
+        let pa = calculate_priority(a, rules, categories, weights);
+        let pb = calculate_priority(b, rules, categories, weights);
         pb.cmp(&pa)
             .then_with(|| a.depth.cmp(&b.depth))
             .then_with(|| a.relative_path.cmp(&b.relative_path))
@@ -261,9 +252,10 @@ mod tests {
             priority: 200,
         }];
         let categories = CategoryConfig::default();
+        let weights = PriorityWeights::default();
 
         let entry = make_entry("README.md");
-        assert_eq!(calculate_priority(&entry, &rules, &categories), 200);
+        assert_eq!(calculate_priority(&entry, &rules, &categories, &weights), 200);
     }
 
     #[test]
@@ -273,37 +265,60 @@ mod tests {
             priority: 130,
         }];
         let categories = CategoryConfig::default();
+        let weights = PriorityWeights::default();
 
         let entry = make_entry("src/scanner/mod.rs");
-        assert!(calculate_priority(&entry, &rules, &categories) >= 130);
+        assert!(calculate_priority(&entry, &rules, &categories, &weights) >= 130);
     }
 
     #[test]
     fn test_extension_priority() {
         let rules = vec![];
         let categories = CategoryConfig::default();
+        let weights = PriorityWeights::default();
 
         let entry = make_entry("main.rs");
-        assert!(calculate_priority(&entry, &rules, &categories) >= 100);
+        assert!(calculate_priority(&entry, &rules, &categories, &weights) >= 100);
     }
 
     #[test]
     fn test_root_code_boost_over_nested() {
         let rules = vec![];
         let categories = CategoryConfig::default();
+        let weights = PriorityWeights::default();
 
         let root = make_entry("main.rs");
         let nested = make_entry("src/helper.rs");
-        assert!(calculate_priority(&root, &rules, &categories) > calculate_priority(&nested, &rules, &categories));
+        assert!(calculate_priority(&root, &rules, &categories, &weights) > calculate_priority(&nested, &rules, &categories, &weights));
     }
 
     #[test]
     fn test_test_file_penalty() {
         let rules = vec![];
         let categories = CategoryConfig::default();
+        let weights = PriorityWeights::default();
 
         let code = make_entry("cmd/bd/agent.go");
         let test = make_entry("cmd/bd/agent_test.go");
-        assert!(calculate_priority(&code, &rules, &categories) > calculate_priority(&test, &rules, &categories));
+        assert!(calculate_priority(&code, &rules, &categories, &weights) > calculate_priority(&test, &rules, &categories, &weights));
+    }
+
+    #[test]
+    fn test_custom_weights() {
+        let rules = vec![];
+        let categories = CategoryConfig::default();
+        let mut weights = PriorityWeights::default();
+
+        // Increase test penalty
+        weights.test_penalty = -100;
+
+        let code = make_entry("src/lib.rs");
+        let test = make_entry("tests/test_lib.rs");
+
+        let code_priority = calculate_priority(&code, &rules, &categories, &weights);
+        let test_priority = calculate_priority(&test, &rules, &categories, &weights);
+
+        // Test should have much lower priority with increased penalty
+        assert!(code_priority - test_priority > 50);
     }
 }

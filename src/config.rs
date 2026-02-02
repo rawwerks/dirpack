@@ -14,6 +14,7 @@ pub struct Config {
     pub output: OutputConfig,
     pub scanning: ScanningConfig,
     pub categories: CategoryConfig,
+    pub priority: PriorityWeights,
     pub priority_rules: Vec<PriorityRule>,
     pub exclude: ExcludeConfig,
     pub signatures: SignatureConfig,
@@ -86,6 +87,7 @@ impl Default for Config {
             output: OutputConfig::default(),
             scanning: ScanningConfig::default(),
             categories: CategoryConfig::default(),
+            priority: PriorityWeights::default(),
             priority_rules: default_priority_rules(),
             exclude: ExcludeConfig::default(),
             signatures: SignatureConfig::default(),
@@ -194,6 +196,44 @@ impl Category {
 pub struct PriorityRule {
     pub pattern: String,
     pub priority: i32,
+}
+
+/// Configurable priority weight adjustments.
+/// These modify the base priority score for files based on their characteristics.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
+pub struct PriorityWeights {
+    /// Default priority for files that don't match any rule (default: 50)
+    pub default_priority: i32,
+    /// Boost for entry point files like main.rs, lib.rs, index.ts (default: 40)
+    pub entrypoint_boost: i32,
+    /// Boost for code files at repository root (default: 20)
+    pub root_code_boost: i32,
+    /// Boost for files in focus directories like src/, lib/, cmd/ (default: 15)
+    pub focus_dir_boost: i32,
+    /// Penalty for test files and directories (default: -40)
+    pub test_penalty: i32,
+    /// Penalty for fixture/mock files and directories (default: -25)
+    pub fixture_penalty: i32,
+    /// Penalty per depth level beyond 2 (default: -5)
+    pub depth_penalty_step: i32,
+    /// Maximum depth penalty (default: -30)
+    pub max_depth_penalty: i32,
+}
+
+impl Default for PriorityWeights {
+    fn default() -> Self {
+        Self {
+            default_priority: 50,
+            entrypoint_boost: 40,
+            root_code_boost: 20,
+            focus_dir_boost: 15,
+            test_penalty: -40,
+            fixture_penalty: -25,
+            depth_penalty_step: -5,
+            max_depth_penalty: -30,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]

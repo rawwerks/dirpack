@@ -242,6 +242,7 @@ fn pack_impl(
         &mut files_by_priority,
         &config.priority_rules,
         &config.categories,
+        &config.priority,
     );
     let entry_point_names = collect_entry_point_names(&files_by_priority);
 

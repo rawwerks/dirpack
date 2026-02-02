@@ -153,7 +153,7 @@ fn run_tree(args: dirpack::cli::TreeArgs) -> anyhow::Result<()> {
         println!("\n--- Priorities ---");
         for entry in entries.iter().filter(|e| !e.is_dir) {
             let priority =
-                dirpack::priority::calculate_priority(entry, &config.priority_rules, &config.categories);
+                dirpack::priority::calculate_priority(entry, &config.priority_rules, &config.categories, &config.priority);
             println!("{}: {}", entry.relative_path.display(), priority);
         }
     }

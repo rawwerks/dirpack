@@ -9,7 +9,17 @@
 
 set -e
 
-DIRPACK="${DIRPACK:-./target/release/dirpack}"
+if [ -z "${DIRPACK:-}" ]; then
+    DIRPACK="./target/release/dirpack"
+    if [ ! -x "$DIRPACK" ]; then
+        cargo build --release
+    fi
+else
+    if [ ! -x "$DIRPACK" ]; then
+        echo "DIRPACK binary not found at $DIRPACK" >&2
+        exit 1
+    fi
+fi
 TARGET="${1:-$(pwd)}"
 OUTPUT_FILE="${2:-/dev/stdout}"
 

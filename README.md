@@ -4,6 +4,8 @@
 
 dirpack creates compressed directory representations that fit within token/byte budgets. Unlike other tools, it uses **progressive disclosure**—including structure first, then signatures, then content—stopping exactly when the budget is exhausted.
 
+dirpack was inpired by [recent research from Jude Gao at Vercel](https://vercel.com/blog/agents-md-outperforms-skills-in-our-agent-evals), which suggests that putting a "compressed" index of the directory directly inside `AGENTS.md` out performs the "progressive disclore" strategy recommended by [Agent Skills](https://github.com/agentskills/agentskills)
+
 ## Features
 
 - **Budget-aware**: Set token or byte limits; output stops at the boundary

@@ -1,0 +1,57 @@
+name: Generate Examples
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+  push:
+    branches: [master]
+    paths:
+      - 'src/**'
+      - 'Cargo.toml'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build dirpack
+        run: cargo build --release
+
+      - name: Generate examples
+        run: |
+          mkdir -p examples
+
+          # Generate at different token budgets
+          for tokens in 1000 2000 5000; do
+            ./target/release/dirpack pack . \
+              -t $tokens \
+              -o examples/dirpack-${tokens}tok.txt \
+              --title "dirpack repo (${tokens} tokens)" \
+              -e "examples/*" \
+              -e "target/*"
+          done
+
+          # Also generate JSON format for 2k
+          ./target/release/dirpack pack . \
+            -t 2000 \
+            -f json \
+            -o examples/dirpack-2000tok.json \
+            --title "dirpack repo (2000 tokens, JSON)" \
+            -e "examples/*" \
+            -e "target/*"
+
+      - name: Commit examples
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add examples/
+          git diff --staged --quiet || git commit -m "chore: regenerate examples [skip ci]"
+          git push

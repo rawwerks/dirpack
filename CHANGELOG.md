@@ -8,13 +8,21 @@ Semantic Versioning.
 ## [Unreleased]
 
 ### Added
-- Placeholder for upcoming changes.
+- Truncation indicator `[+N files truncated]` shows what was cut from output
+- Pack concurrency limiter via `DIRPACK_PACK_CONCURRENCY_LIMIT` env var
+- Budget caps and safe config overrides to prevent runaway scanning
+- Configurable priority weights in `[priority]` config section
+- 44 edge case tests covering all fixture scenarios
+- Visual inspection output in eval harness
 
 ### Changed
-- Placeholder for upcoming changes.
+- Round-robin signature budget distribution across top-level directories
+- Source code (`src/`) now prioritized over test fixtures in output
+- Tree budget ratio reduced to 30% for better signature coverage
 
 ### Fixed
-- Placeholder for upcoming changes.
+- Single directory no longer dominates signature budget
+- Test fixtures no longer appear before core code at low budgets
 
 ## [0.1.0] - 2026-02-01
 

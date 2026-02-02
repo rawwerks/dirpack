@@ -354,197 +354,6 @@ fn test_no_git_mode_includes_ignored() {
 }
 
 #[test]
-fn test_duplicate_utils_fixture() {
-    let root = fixture_path("duplicate_utils");
-    let output = pack_output(
-        &root,
-        BudgetTarget::Tokens(800),
-        Config::default(),
-        false,
-        false,
-    );
-    assert!(output.contains("a:{utils.rs}"));
-    assert!(output.contains("e:{utils.rs}"));
-}
-
-#[test]
-fn test_empty_repo_fixture() {
-    let root = fixture_path("empty_repo");
-    let output = pack_output(
-        &root,
-        BudgetTarget::Tokens(200),
-        Config::default(),
-        false,
-        false,
-    );
-    assert!(output.contains("[empty_repo]"));
-    assert!(output.contains("root: tests/fixtures/empty_repo"));
-}
-
-#[test]
-fn test_flat_1000_files_fixture() {
-    let root = fixture_path("flat_1000_files");
-    let output = pack_output(
-        &root,
-        BudgetTarget::Bytes(50_000),
-        Config::default(),
-        false,
-        false,
-    );
-    assert!(output.contains("file_0001.txt"));
-    assert!(output.contains("file_0200.txt"));
-}
-
-#[test]
-fn test_long_names_fixture() {
-    let root = fixture_path("long_names");
-    let entry = fs::read_dir(&root)
-        .expect("read long_names")
-        .next()
-        .expect("long_names entry")
-        .expect("long_names entry");
-    let name = entry.file_name().to_string_lossy().to_string();
-
-    let output = pack_output(
-        &root,
-        BudgetTarget::Tokens(500),
-        Config::default(),
-        false,
-        false,
-    );
-    assert!(output.contains(&name));
-}
-
-#[test]
-fn test_signatures_heavy_fixture() {
-    let root = fixture_path("signatures_heavy");
-    let output = pack_output(
-        &root,
-        BudgetTarget::Tokens(800),
-        Config::default(),
-        false,
-        true,
-    );
-    assert!(output.contains("func1"));
-    assert!(output.contains("func8"));
-}
-
-#[test]
-fn test_small_project_fixture() {
-    let root = fixture_path("small_project");
-    let output = pack_output(
-        &root,
-        BudgetTarget::Tokens(800),
-        Config::default(),
-        false,
-        true,
-    );
-    assert!(output.contains("src:{lib.rs"));
-    assert!(output.contains("tests:{integration.rs}"));
-}
-
-#[test]
-fn test_special_chars_fixture() {
-    let root = fixture_path("special_chars");
-    let output = pack_output(
-        &root,
-        BudgetTarget::Tokens(800),
-        Config::default(),
-        false,
-        false,
-    );
-    assert!(output.contains("space name.rs"));
-    assert!(output.contains("bracket[1].rs"));
-    assert!(output.contains("quote'file.rs"));
-    assert!(output.contains("double\"quote.rs"));
-}
-
-#[test]
-fn test_spine_budget_fixture() {
-    let root = fixture_path("spine_budget");
-    let output = pack_output(
-        &root,
-        BudgetTarget::Tokens(1200),
-        Config::default(),
-        false,
-        false,
-    );
-    assert!(output.contains("this_is_a_very_long_filename_alpha.rs"));
-    assert!(output.contains("this_is_a_very_long_filename_gamma.rs"));
-}
-
-#[test]
-fn test_submodule_like_fixture() {
-    let root = fixture_path("submodule_like");
-    let output = pack_output(
-        &root,
-        BudgetTarget::Tokens(800),
-        Config::default(),
-        false,
-        false,
-    );
-    assert!(output.contains("submodule_repo"));
-    assert!(output.contains("src:{lib.rs}"));
-    assert!(output.contains(".git"));
-}
-
-#[test]
-fn test_symlinks_fixture() {
-    let root = fixture_path("symlinks");
-    let output = pack_output(
-        &root,
-        BudgetTarget::Tokens(500),
-        Config::default(),
-        false,
-        false,
-    );
-    assert!(output.contains("target.txt"));
-    assert!(!output.contains("link.txt"));
-    assert!(!output.contains("link_dir"));
-}
-
-#[test]
-fn test_tree_heavy_fixture() {
-    let root = fixture_path("tree_heavy");
-    let output = pack_output(
-        &root,
-        BudgetTarget::Tokens(1200),
-        Config::default(),
-        false,
-        false,
-    );
-    assert!(output.contains("data_001.txt"));
-    assert!(output.contains("data_010.txt"));
-}
-
-#[test]
-fn test_unicode_names_fixture() {
-    let root = fixture_path("unicode_names");
-    let output = pack_output(
-        &root,
-        BudgetTarget::Tokens(800),
-        Config::default(),
-        false,
-        false,
-    );
-    assert!(output.contains("日本語.rs"));
-    assert!(output.contains("emoji_😀.rs"));
-}
-
-#[test]
-fn test_untracked_files_fixture() {
-    let root = fixture_path("untracked_files");
-    let output = pack_output(
-        &root,
-        BudgetTarget::Tokens(300),
-        Config::default(),
-        false,
-        false,
-    );
-    assert!(output.contains("tracked.txt"));
-}
-
-#[test]
 fn test_duplicate_utils_disambiguated() {
     let root = fixture_path("duplicate_utils");
     let output = pack_output(
@@ -656,17 +465,17 @@ fn test_spine_budget_truncation() {
 }
 
 #[test]
-fn test_submodule_like_ignores_git_dir() {
+fn test_submodule_like_lists_git_marker() {
     let root = fixture_path("submodule_like");
     let output = pack_output(
         &root,
         BudgetTarget::Tokens(800),
         Config::default(),
-        true,
+        false,
         false,
     );
     assert!(output.contains("submodule_repo/src:{lib.rs}"));
-    assert!(!output.contains(".git"));
+    assert!(output.contains("submodule_repo:{.git}"));
 }
 
 #[test]

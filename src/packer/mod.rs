@@ -539,7 +539,8 @@ fn add_tree_segments(
                 top_level_dirs.insert(file_name);
             }
         } else {
-            if entry_point_names.contains(&file_name) {
+            // Only add to entry_point_dirs if NOT a test/fixture directory
+            if entry_point_names.contains(&file_name) && !is_test_or_fixture_path(&parent) {
                 entry_point_dirs.insert(parent.clone());
             }
             dirs_by_depth
@@ -566,8 +567,20 @@ fn add_tree_segments(
     // Add directories level by level (shallow first) until tree budget exhausted
     let mut processed_dirs: BTreeSet<String> = BTreeSet::new();
 
-    // Ensure entry-point directories are emitted first
-    for entry_dir in entry_point_dirs.iter() {
+    // Ensure entry-point directories are emitted first (but deprioritize test/fixture dirs)
+    let mut sorted_entry_dirs: Vec<&String> = entry_point_dirs.iter().collect();
+    sorted_entry_dirs.sort_by(|a, b| {
+        let a_fixture = is_test_or_fixture_path(a);
+        let b_fixture = is_test_or_fixture_path(b);
+        let a_core = is_core_dir(a);
+        let b_core = is_core_dir(b);
+        // Deprioritize test/fixture, prioritize core dirs
+        a_fixture
+            .cmp(&b_fixture)
+            .then_with(|| b_core.cmp(&a_core))
+            .then_with(|| a.cmp(b))
+    });
+    for entry_dir in sorted_entry_dirs {
         let mut files_for_dir: Option<BTreeSet<String>> = None;
         for (_depth, dirs_at_level) in &dirs_by_depth {
             if let Some(files) = dirs_at_level.get(entry_dir) {
@@ -608,9 +621,23 @@ fn add_tree_segments(
         }
         let mut dirs_vec: Vec<(String, BTreeSet<String>)> = dirs_at_level.into_iter().collect();
         dirs_vec.sort_by(|(a_dir, _), (b_dir, _)| {
-            let a_pri = entry_point_dirs.contains(a_dir);
-            let b_pri = entry_point_dirs.contains(b_dir);
-            b_pri.cmp(&a_pri).then_with(|| a_dir.cmp(b_dir))
+            // Priority order: entry point dirs > core dirs > other dirs > test/fixture dirs
+            let a_entry = entry_point_dirs.contains(a_dir);
+            let b_entry = entry_point_dirs.contains(b_dir);
+            let a_fixture = is_test_or_fixture_path(a_dir);
+            let b_fixture = is_test_or_fixture_path(b_dir);
+            let a_core = is_core_dir(a_dir);
+            let b_core = is_core_dir(b_dir);
+
+            // Entry point dirs first
+            b_entry
+                .cmp(&a_entry)
+                // Then deprioritize test/fixture dirs
+                .then_with(|| a_fixture.cmp(&b_fixture))
+                // Then prioritize core dirs (src/, lib/, etc.)
+                .then_with(|| b_core.cmp(&a_core))
+                // Finally alphabetically
+                .then_with(|| a_dir.cmp(b_dir))
         });
 
         for (dir, files) in dirs_vec {
@@ -682,6 +709,37 @@ fn collect_entry_point_names(files: &[FileEntry]) -> std::collections::BTreeSet<
         }
     }
     names
+}
+
+/// Check if a directory path is test or fixture related.
+fn is_test_or_fixture_path(dir: &str) -> bool {
+    let lower = dir.to_ascii_lowercase();
+    lower.contains("test")
+        || lower.contains("fixture")
+        || lower.contains("mock")
+        || lower.contains("spec")
+        || lower.contains("e2e")
+        || lower.contains("testdata")
+}
+
+/// Check if a directory path is a core source directory (not inside tests/fixtures).
+fn is_core_dir(dir: &str) -> bool {
+    // Exclude test/fixture paths from being considered "core"
+    if is_test_or_fixture_path(dir) {
+        return false;
+    }
+    let lower = dir.to_ascii_lowercase();
+    // Check if path starts with or contains these core dirs
+    lower.starts_with("src")
+        || lower.starts_with("lib")
+        || lower.starts_with("cmd")
+        || lower.starts_with("pkg")
+        || lower.starts_with("internal")
+        || lower.contains("/src")
+        || lower.contains("/lib")
+        || lower.contains("/cmd")
+        || lower.contains("/pkg")
+        || lower.contains("/internal")
 }
 
 fn top_level_dir(path: &Path) -> String {

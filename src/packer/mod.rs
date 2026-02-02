@@ -22,6 +22,7 @@ pub mod content;
 pub mod signatures;
 pub mod spine;
 
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::path::Path;
 
 use crate::budget::{Budget, BudgetTarget};
@@ -141,43 +142,130 @@ pub fn pack(
         if let Ok(mut extractor) = SignatureExtractor::new() {
             extractor.set_max_signature_length(config.signatures.max_signature_length);
 
-            for file in &files_by_priority {
-                if budget.is_exhausted() {
-                    break;
+            let signature_budget_limit = budget.remaining();
+            if signature_budget_limit > 0 {
+                let budget_target = budget.target;
+                let make_budget = |limit| match budget_target {
+                    BudgetTarget::Tokens(_) => Budget::tokens(limit),
+                    BudgetTarget::Bytes(_) => Budget::bytes(limit),
+                };
+
+                let mut files_by_top_dir: BTreeMap<String, VecDeque<FileEntry>> = BTreeMap::new();
+                let mut top_dir_order: Vec<String> = Vec::new();
+                let mut seen_top_dirs: BTreeSet<String> = BTreeSet::new();
+
+                for file in &files_by_priority {
+                    let top_dir = top_level_dir(&file.relative_path);
+                    if seen_top_dirs.insert(top_dir.clone()) {
+                        top_dir_order.push(top_dir.clone());
+                    }
+                    files_by_top_dir
+                        .entry(top_dir)
+                        .or_default()
+                        .push_back(file.clone());
                 }
 
-                if extractor.supports_extension(&file.extension) {
-                    if let Ok(sigs) = extractor.extract_from_file(&file.path) {
-                        if sigs.is_empty() {
+                let num_top_dirs = top_dir_order.len();
+                if num_top_dirs > 0 {
+                    let mut per_dir_budget_limit = signature_budget_limit / num_top_dirs;
+                    if per_dir_budget_limit == 0 {
+                        // Budget too small to split fairly; fall back to round-robin without caps.
+                        per_dir_budget_limit = signature_budget_limit;
+                    }
+                    let mut per_dir_budget: BTreeMap<String, Budget> = BTreeMap::new();
+                    for dir in &top_dir_order {
+                        per_dir_budget.insert(dir.clone(), make_budget(per_dir_budget_limit));
+                    }
+
+                    let mut dir_queue: VecDeque<String> = top_dir_order.into();
+                    while let Some(dir) = dir_queue.pop_front() {
+                        if budget.is_exhausted() {
+                            break;
+                        }
+
+                        let dir_budget_exhausted = per_dir_budget
+                            .get(&dir)
+                            .map(|b| b.is_exhausted())
+                            .unwrap_or(true);
+                        if dir_budget_exhausted {
                             continue;
                         }
-                        let rel_path = file.relative_path.to_string_lossy().to_string();
 
-                        // Try to fit signatures incrementally
-                        let mut sig_texts: Vec<String> = Vec::new();
-                        for sig in &sigs {
-                            let compact = sig.compact();
-                            let test_segment = if sig_texts.is_empty() {
-                                format!("{}:{}", rel_path, compact)
-                            } else {
-                                format!("{}:{},{}", rel_path, sig_texts.join(","), compact)
-                            };
+                        if let Some(queue) = files_by_top_dir.get_mut(&dir) {
+                            while let Some(file) = queue.pop_front() {
+                                if !extractor.supports_extension(&file.extension) {
+                                    continue;
+                                }
 
-                            // Check if this segment would fit
-                            let candidate = format!("|{}", test_segment);
-                            if budget.would_fit(&candidate) {
-                                sig_texts.push(compact);
-                            } else {
-                                break; // Can't fit more signatures from this file
+                                let sigs = match extractor.extract_from_file(&file.path) {
+                                    Ok(sigs) => sigs,
+                                    Err(_) => continue,
+                                };
+                                if sigs.is_empty() {
+                                    continue;
+                                }
+
+                                let rel_path = file.relative_path.to_string_lossy().to_string();
+
+                                // Try to fit signatures incrementally
+                                let mut sig_texts: Vec<String> = Vec::new();
+                                for sig in &sigs {
+                                    let compact = sig.compact();
+                                    let test_segment = if sig_texts.is_empty() {
+                                        format!("{}:{}", rel_path, compact)
+                                    } else {
+                                        format!("{}:{},{}", rel_path, sig_texts.join(","), compact)
+                                    };
+
+                                    // Check if this segment would fit
+                                    let candidate = if segments.is_empty() {
+                                        test_segment.clone()
+                                    } else {
+                                        format!("|{}", test_segment)
+                                    };
+                                    let can_fit = budget.would_fit(&candidate)
+                                        && per_dir_budget
+                                            .get(&dir)
+                                            .map(|b| b.would_fit(&candidate))
+                                            .unwrap_or(false);
+                                    if can_fit {
+                                        sig_texts.push(compact);
+                                    } else {
+                                        break; // Can't fit more signatures from this file
+                                    }
+                                }
+
+                                // Add segment if we got any signatures
+                                if sig_texts.is_empty() {
+                                    continue;
+                                }
+
+                                let segment = format!("{}:{}", rel_path, sig_texts.join(","));
+                                let candidate = if segments.is_empty() {
+                                    segment.clone()
+                                } else {
+                                    format!("|{}", segment)
+                                };
+                                if push_segment(&mut segments, &mut budget, segment) {
+                                    if let Some(b) = per_dir_budget.get_mut(&dir) {
+                                        b.try_add(&candidate);
+                                    }
+                                }
+                                break; // One file per round for this dir
                             }
                         }
 
-                        // Add segment if we got any signatures
-                        if !sig_texts.is_empty() {
-                            let segment = format!("{}:{}", rel_path, sig_texts.join(","));
-                            push_segment(&mut segments, &mut budget, segment);
+                        let dir_budget_exhausted = per_dir_budget
+                            .get(&dir)
+                            .map(|b| b.is_exhausted())
+                            .unwrap_or(true);
+                        let has_more_files = files_by_top_dir
+                            .get(&dir)
+                            .map(|q| !q.is_empty())
+                            .unwrap_or(false);
+                        if !budget.is_exhausted() && !dir_budget_exhausted && has_more_files {
+                            dir_queue.push_back(dir);
                         }
-                        // Continue to next file even if nothing fit
                     }
                 }
             }
@@ -373,4 +461,20 @@ fn collect_entry_point_names(files: &[FileEntry]) -> std::collections::BTreeSet<
         }
     }
     names
+}
+
+fn top_level_dir(path: &Path) -> String {
+    let mut components = path.components();
+    let first = components.next();
+    let has_second = components.next().is_some();
+    match first {
+        None => ".".to_string(),
+        Some(component) => {
+            if has_second {
+                component.as_os_str().to_string_lossy().to_string()
+            } else {
+                ".".to_string()
+            }
+        }
+    }
 }

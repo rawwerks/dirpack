@@ -23,9 +23,11 @@ pub mod signatures;
 pub mod spine;
 
 use std::path::Path;
+use std::sync::{Condvar, Mutex, OnceLock};
 
 use crate::budget::{Budget, BudgetTarget};
 use crate::config::Config;
+use crate::error::{DirpackError, Result};
 use crate::priority;
 use crate::scanner;
 use crate::scanner::entry::FileEntry;
@@ -34,6 +36,89 @@ use signatures::SignatureExtractor;
 
 // Tree budget ratio (30% to account for header overhead and ensure ≤40% in output)
 const TREE_BUDGET_RATIO: f64 = 0.30;
+const PACK_CONCURRENCY_ENV: &str = "DIRPACK_PACK_CONCURRENCY_LIMIT";
+const PACK_RETRY_AFTER_ENV: &str = "DIRPACK_PACK_RETRY_AFTER_SECS";
+const DEFAULT_RETRY_AFTER_SECS: u64 = 1;
+
+static PACK_SEMAPHORE: OnceLock<PackSemaphore> = OnceLock::new();
+
+struct PackSemaphore {
+    limit: usize,
+    retry_after_secs: u64,
+    in_flight: Mutex<usize>,
+    cvar: Condvar,
+}
+
+impl PackSemaphore {
+    fn new() -> Self {
+        let limit = read_env_usize(PACK_CONCURRENCY_ENV)
+            .filter(|value| *value > 0)
+            .unwrap_or_else(default_pack_limit);
+        let retry_after_secs = read_env_u64(PACK_RETRY_AFTER_ENV)
+            .filter(|value| *value > 0)
+            .unwrap_or(DEFAULT_RETRY_AFTER_SECS);
+
+        Self {
+            limit,
+            retry_after_secs,
+            in_flight: Mutex::new(0),
+            cvar: Condvar::new(),
+        }
+    }
+
+    fn try_acquire(&'static self) -> Option<PackPermit> {
+        let mut in_flight = self.in_flight.lock().expect("pack semaphore poisoned");
+        if *in_flight >= self.limit {
+            return None;
+        }
+        *in_flight += 1;
+        Some(PackPermit { semaphore: self })
+    }
+
+    fn acquire(&'static self) -> PackPermit {
+        let mut in_flight = self.in_flight.lock().expect("pack semaphore poisoned");
+        while *in_flight >= self.limit {
+            in_flight = self.cvar.wait(in_flight).expect("pack semaphore poisoned");
+        }
+        *in_flight += 1;
+        PackPermit { semaphore: self }
+    }
+}
+
+struct PackPermit {
+    semaphore: &'static PackSemaphore,
+}
+
+impl Drop for PackPermit {
+    fn drop(&mut self) {
+        let mut in_flight = self
+            .semaphore
+            .in_flight
+            .lock()
+            .expect("pack semaphore poisoned");
+        *in_flight = in_flight.saturating_sub(1);
+        self.semaphore.cvar.notify_one();
+    }
+}
+
+fn pack_semaphore() -> &'static PackSemaphore {
+    PACK_SEMAPHORE.get_or_init(PackSemaphore::new)
+}
+
+fn read_env_usize(name: &str) -> Option<usize> {
+    std::env::var(name).ok().and_then(|value| value.parse().ok())
+}
+
+fn read_env_u64(name: &str) -> Option<u64> {
+    std::env::var(name).ok().and_then(|value| value.parse().ok())
+}
+
+fn default_pack_limit() -> usize {
+    std::thread::available_parallelism()
+        .map(|value| value.get())
+        .unwrap_or(1)
+        .max(1)
+}
 
 /// Result of packing a directory.
 pub struct PackResult {
@@ -43,8 +128,40 @@ pub struct PackResult {
     pub files_included: usize,
 }
 
-/// Pack a directory into a budgeted index.
+/// Pack a directory into a budgeted index (blocking if pack slots are full).
 pub fn pack(
+    root: &Path,
+    config: &Config,
+    budget_target: BudgetTarget,
+    use_git: bool,
+    include_signatures: bool,
+) -> PackResult {
+    let _permit = pack_semaphore().acquire();
+    pack_impl(root, config, budget_target, use_git, include_signatures)
+}
+
+/// Pack a directory into a budgeted index (non-blocking when saturated).
+pub fn try_pack(
+    root: &Path,
+    config: &Config,
+    budget_target: BudgetTarget,
+    use_git: bool,
+    include_signatures: bool,
+) -> Result<PackResult> {
+    let semaphore = pack_semaphore();
+    let _permit = semaphore.try_acquire().ok_or(DirpackError::PackBusy {
+        retry_after_secs: semaphore.retry_after_secs,
+    })?;
+    Ok(pack_impl(
+        root,
+        config,
+        budget_target,
+        use_git,
+        include_signatures,
+    ))
+}
+
+fn pack_impl(
     root: &Path,
     config: &Config,
     budget_target: BudgetTarget,

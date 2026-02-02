@@ -85,6 +85,13 @@ priority = 140
 
 Run `dirpack init` to generate a full default config.
 
+## Runtime Limits
+
+`dirpack` enforces a per-process concurrency cap for pack jobs to protect CPU/IO.
+
+- `DIRPACK_PACK_CONCURRENCY_LIMIT`: max concurrent pack jobs (default: available CPU parallelism)
+- `DIRPACK_PACK_RETRY_AFTER_SECS`: suggested retry delay for saturated servers (default: 1)
+
 ## How It Works
 
 1. **Scan** directory (git-aware or walkdir fallback)

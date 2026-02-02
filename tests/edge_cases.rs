@@ -11,6 +11,20 @@ fn fixture_path(name: &str) -> PathBuf {
     PathBuf::from("tests/fixtures").join(name)
 }
 
+fn ensure_submodule_git_file(root: &Path) {
+    let git_file = root.join("submodule_repo").join(".git");
+    if git_file.exists() {
+        return;
+    }
+    if let Some(parent) = git_file.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    let _ = fs::write(
+        git_file,
+        "gitdir: ../.git/modules/submodule_repo\n",
+    );
+}
+
 fn pack_output(root: &Path, budget: BudgetTarget, mut config: Config, use_git: bool, include_signatures: bool) -> String {
     // Keep defaults but allow caller tweaks.
     if config.scanning.max_depth == 0 {
@@ -643,6 +657,7 @@ fn test_spine_budget_fixture() {
 #[test]
 fn test_submodule_like_fixture() {
     let root = fixture_path("submodule_like");
+    ensure_submodule_git_file(&root);
     let output = pack_output(
         &root,
         BudgetTarget::Tokens(800),
@@ -657,6 +672,7 @@ fn test_submodule_like_fixture() {
 #[test]
 fn test_submodule_like_ignores_git_dir() {
     let root = fixture_path("submodule_like");
+    ensure_submodule_git_file(&root);
     let output = pack_output(
         &root,
         BudgetTarget::Tokens(800),

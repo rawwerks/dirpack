@@ -7,6 +7,8 @@ Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-02-02
+
 ### Added
 - Truncation indicator `[+N files truncated]` shows what was cut from output
 - Pack concurrency limiter via `DIRPACK_PACK_CONCURRENCY_LIMIT` env var

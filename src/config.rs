@@ -4,6 +4,7 @@ use std::path::Path;
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 
+use crate::budget::BudgetTarget;
 use crate::error::Result;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -17,6 +18,10 @@ pub struct Config {
     pub signatures: SignatureConfig,
 }
 
+pub const SAFE_MAX_BUDGET_TOKENS: usize = 8_000;
+pub const SAFE_MAX_BUDGET_BYTES: usize = 32_000;
+pub const SAFE_MAX_SCAN_DEPTH: usize = 20;
+
 impl Config {
     pub fn from_str(contents: &str) -> Result<Self> {
         Ok(toml::from_str(contents)?)
@@ -25,6 +30,51 @@ impl Config {
     pub fn load(path: impl AsRef<Path>) -> Result<Self> {
         let contents = fs::read_to_string(path)?;
         Self::from_str(&contents)
+    }
+}
+
+pub fn clamp_budget_target(target: BudgetTarget) -> BudgetTarget {
+    match target {
+        BudgetTarget::Tokens(tokens) => {
+            let clamped = tokens.min(SAFE_MAX_BUDGET_TOKENS);
+            if clamped != tokens {
+                eprintln!(
+                    "SECURITY: token budget clamped to {}",
+                    SAFE_MAX_BUDGET_TOKENS
+                );
+            }
+            BudgetTarget::Tokens(clamped)
+        }
+        BudgetTarget::Bytes(bytes) => {
+            let clamped = bytes.min(SAFE_MAX_BUDGET_BYTES);
+            if clamped != bytes {
+                eprintln!(
+                    "SECURITY: byte budget clamped to {}",
+                    SAFE_MAX_BUDGET_BYTES
+                );
+            }
+            BudgetTarget::Bytes(clamped)
+        }
+    }
+}
+
+pub fn apply_security_overrides(config: &mut Config) {
+    if config.scanning.follow_symlinks {
+        eprintln!("SECURITY: follow_symlinks forced off");
+        config.scanning.follow_symlinks = false;
+    }
+
+    if config.scanning.include_hidden {
+        eprintln!("SECURITY: include_hidden forced off");
+        config.scanning.include_hidden = false;
+    }
+
+    if config.scanning.max_depth == 0 || config.scanning.max_depth > SAFE_MAX_SCAN_DEPTH {
+        eprintln!(
+            "SECURITY: max_depth clamped to {}",
+            SAFE_MAX_SCAN_DEPTH
+        );
+        config.scanning.max_depth = SAFE_MAX_SCAN_DEPTH;
     }
 }
 

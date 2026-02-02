@@ -6,7 +6,7 @@ use clap::Parser;
 
 use dirpack::budget::BudgetTarget;
 use dirpack::cli::{Cli, Commands, PackArgs};
-use dirpack::config::{Config, OutputFormat};
+use dirpack::config::{apply_security_overrides, clamp_budget_target, Config, OutputFormat};
 use dirpack::packer;
 use dirpack::tokenizer;
 
@@ -33,7 +33,7 @@ fn run_pack(args: PackArgs) -> anyhow::Result<()> {
     }
 
     // Load config
-    let config = if let Some(config_path) = &args.config {
+    let mut config = if let Some(config_path) = &args.config {
         Config::load(config_path)?
     } else {
         // Try local config first, then global, then default
@@ -44,6 +44,7 @@ fn run_pack(args: PackArgs) -> anyhow::Result<()> {
             Config::default()
         }
     };
+    apply_security_overrides(&mut config);
 
     // Determine budget target
     let budget_target = if let Some(tokens) = args.target_tokens {
@@ -53,6 +54,7 @@ fn run_pack(args: PackArgs) -> anyhow::Result<()> {
     } else {
         BudgetTarget::Tokens(config.output.default_budget_tokens)
     };
+    let budget_target = clamp_budget_target(budget_target);
 
     // Determine output format
     let format = args.format.unwrap_or(config.output.format);

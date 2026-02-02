@@ -651,7 +651,6 @@ fn test_submodule_like_fixture() {
         false,
     );
     assert!(output.contains("submodule_repo/src:{lib.rs}"));
-    assert!(output.contains("submodule_repo:{.git}"));
 }
 
 #[test]

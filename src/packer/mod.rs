@@ -62,9 +62,11 @@ impl TruncationInfo {
 
         let files_hidden = self.files_scanned.saturating_sub(self.files_in_tree);
         if files_hidden > 0 {
-            Some(format!("[+{} files not shown]", files_hidden))
+            let label = if files_hidden == 1 { "file" } else { "files" };
+            Some(format!("[+{} more {} truncated]", files_hidden, label))
         } else if self.dirs_truncated > 0 {
-            Some(format!("[+{} dirs truncated]", self.dirs_truncated))
+            let label = if self.dirs_truncated == 1 { "dir" } else { "dirs" };
+            Some(format!("[+{} more {} truncated]", self.dirs_truncated, label))
         } else {
             None
         }

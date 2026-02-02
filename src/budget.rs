@@ -1,5 +1,6 @@
 //! Budget tracking for token/byte limits.
 
+use crate::limits;
 use crate::tokenizer;
 
 /// Budget target type - either tokens or bytes.
@@ -7,6 +8,17 @@ use crate::tokenizer;
 pub enum BudgetTarget {
     Tokens(usize),
     Bytes(usize),
+}
+
+impl BudgetTarget {
+    pub fn clamped(self) -> Self {
+        match self {
+            BudgetTarget::Tokens(limit) => {
+                BudgetTarget::Tokens(limits::clamp_budget_tokens(limit))
+            }
+            BudgetTarget::Bytes(limit) => BudgetTarget::Bytes(limits::clamp_budget_bytes(limit)),
+        }
+    }
 }
 
 /// Tracks usage against a budget.
@@ -19,7 +31,10 @@ pub struct Budget {
 impl Budget {
     /// Create a new budget with the given target.
     pub fn new(target: BudgetTarget) -> Self {
-        Self { target, used: 0 }
+        Self {
+            target: target.clamped(),
+            used: 0,
+        }
     }
 
     /// Create a token-based budget.

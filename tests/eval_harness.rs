@@ -50,9 +50,11 @@ fn visual_inspection_2000t() {
 
 #[test]
 fn eval_with_visual_inspection() {
-    let status = std::process::Command::new("./scripts/eval.sh")
+    let status = std::process::Command::new("bash")
+        .arg("./scripts/eval.sh")
         .arg("tests/fixtures/small_project")
         .arg("/dev/null")
+        .env("DIRPACK", "./target/debug/dirpack")
         .status()
         .expect("eval.sh failed to run");
 

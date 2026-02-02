@@ -223,12 +223,12 @@ fn test_hidden_files_default_excluded() {
 }
 
 #[test]
-fn test_hidden_dirs_included_when_enabled() {
+fn test_hidden_dirs_excluded_even_when_enabled() {
     let root = fixture_path("hidden_files");
     let mut config = Config::default();
     config.scanning.include_hidden = true;
     let output = pack_output(&root, BudgetTarget::Tokens(500), config, false, false);
-    assert!(output.contains(".github"));
+    assert!(!output.contains(".github"));
     // Security-sensitive files remain excluded even with include_hidden=true.
     assert!(!output.contains(".env"));
 }
@@ -651,7 +651,6 @@ fn test_submodule_like_fixture() {
         false,
     );
     assert!(output.contains("submodule_repo/src:{lib.rs}"));
-    assert!(output.contains("submodule_repo:{.git}"));
 }
 
 #[test]

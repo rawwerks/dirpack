@@ -5,6 +5,7 @@ pub mod config;
 pub mod error;
 pub mod eval;
 pub mod format;
+pub mod limits;
 pub mod packer;
 pub mod priority;
 pub mod scanner;

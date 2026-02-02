@@ -1,6 +1,6 @@
 //! Pipe-delimited output format (Vercel-style).
 //!
-//! Format: [Title]|root: path|IMPORTANT: notes|dirs:{...}|dir:{files}|file:signatures
+//! Format: `[Title]|root: path|IMPORTANT: notes|dirs:{...}|dir:{files}|file:signatures`
 
 use crate::format::Formatter;
 use crate::packer::signatures::Signature;

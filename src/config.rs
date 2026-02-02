@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::budget::BudgetTarget;
 use crate::error::Result;
+use crate::limits;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
@@ -18,9 +19,10 @@ pub struct Config {
     pub signatures: SignatureConfig,
 }
 
-pub const SAFE_MAX_BUDGET_TOKENS: usize = 8_000;
-pub const SAFE_MAX_BUDGET_BYTES: usize = 32_000;
-pub const SAFE_MAX_SCAN_DEPTH: usize = 20;
+pub use crate::limits::{
+    MAX_BUDGET_BYTES as SAFE_MAX_BUDGET_BYTES, MAX_BUDGET_TOKENS as SAFE_MAX_BUDGET_TOKENS,
+    MAX_SCAN_DEPTH as SAFE_MAX_SCAN_DEPTH,
+};
 
 impl Config {
     pub fn from_str(contents: &str) -> Result<Self> {
@@ -36,7 +38,7 @@ impl Config {
 pub fn clamp_budget_target(target: BudgetTarget) -> BudgetTarget {
     match target {
         BudgetTarget::Tokens(tokens) => {
-            let clamped = tokens.min(SAFE_MAX_BUDGET_TOKENS);
+            let clamped = limits::clamp_budget_tokens(tokens);
             if clamped != tokens {
                 eprintln!(
                     "SECURITY: token budget clamped to {}",
@@ -46,7 +48,7 @@ pub fn clamp_budget_target(target: BudgetTarget) -> BudgetTarget {
             BudgetTarget::Tokens(clamped)
         }
         BudgetTarget::Bytes(bytes) => {
-            let clamped = bytes.min(SAFE_MAX_BUDGET_BYTES);
+            let clamped = limits::clamp_budget_bytes(bytes);
             if clamped != bytes {
                 eprintln!(
                     "SECURITY: byte budget clamped to {}",

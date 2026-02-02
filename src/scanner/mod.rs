@@ -8,21 +8,21 @@ pub mod walk;
 
 use std::path::{Path, PathBuf};
 
-use crate::config::{security_exclude_patterns, Config};
+use crate::config::{security_exclude_patterns, Config, ScanningConfig};
+use crate::limits;
 pub use entry::{FileEntry, Representation};
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 
 /// Scan a directory, preferring git ls-files if available.
 pub fn scan(root: &Path, config: &Config, use_git: bool) -> Vec<FileEntry> {
     let mut effective_scanning = config.scanning.clone();
-    // Never follow symlinks, regardless of user configuration.
-    effective_scanning.follow_symlinks = false;
     if !use_git {
         effective_scanning.use_gitignore = false;
         if effective_scanning.no_git_safety {
             effective_scanning.include_hidden = true;
         }
     }
+    apply_safe_scanning_overrides(&mut effective_scanning);
 
     // Try git first if enabled
     let entries = if use_git {
@@ -152,4 +152,11 @@ fn first_hidden_prefix(path: &Path) -> Option<PathBuf> {
         }
     }
     None
+}
+
+fn apply_safe_scanning_overrides(scanning: &mut ScanningConfig) {
+    // Never allow config to widen sandbox access.
+    scanning.follow_symlinks = false;
+    scanning.include_hidden = false;
+    scanning.max_depth = limits::clamp_scan_depth(scanning.max_depth);
 }

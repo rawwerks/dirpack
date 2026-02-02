@@ -6,7 +6,7 @@ use dirpack::packer::pack;
 use tempfile::TempDir;
 
 fn pack_output(root: &Path, config: Config, use_git: bool) -> String {
-    let result = pack(root, &config, BudgetTarget::Tokens(500), use_git, false);
+    let result = pack(root, &config, BudgetTarget::Tokens(500), use_git, false, None);
     result.output
 }
 

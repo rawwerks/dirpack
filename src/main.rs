@@ -64,7 +64,14 @@ fn run_pack(args: PackArgs) -> anyhow::Result<()> {
     let include_signatures = !args.no_signatures;
 
     let start = Instant::now();
-    let result = packer::pack(&root, &config, budget_target, use_git, include_signatures);
+    let result = packer::pack(
+        &root,
+        &config,
+        budget_target,
+        use_git,
+        include_signatures,
+        args.root_label.as_deref(),
+    );
     let elapsed = start.elapsed();
 
     // Output

@@ -30,7 +30,7 @@ fn pack_output(root: &Path, budget: BudgetTarget, mut config: Config, use_git: b
     if config.scanning.max_depth == 0 {
         config.scanning.max_depth = 20;
     }
-    let result = pack(root, &config, budget, use_git, include_signatures);
+    let result = pack(root, &config, budget, use_git, include_signatures, None);
     result.output
 }
 

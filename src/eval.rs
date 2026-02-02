@@ -46,7 +46,7 @@ pub fn evaluate(path: &Path, budgets: &[usize]) -> EvalReport {
     let mut results = Vec::new();
     for target in budgets {
         let start = Instant::now();
-        let result = packer::pack(path, &config, BudgetTarget::Tokens(*target), true, true);
+        let result = packer::pack(path, &config, BudgetTarget::Tokens(*target), true, true, None);
         let elapsed = start.elapsed();
         let metrics = compute_metrics(&result.output, *target, &entry_points, elapsed);
         results.push(metrics);

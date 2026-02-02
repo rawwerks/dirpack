@@ -179,9 +179,17 @@ pub fn pack(
     budget_target: BudgetTarget,
     use_git: bool,
     include_signatures: bool,
+    root_label: Option<&str>,
 ) -> PackResult {
     let _permit = pack_semaphore().acquire();
-    pack_impl(root, config, budget_target, use_git, include_signatures)
+    pack_impl(
+        root,
+        config,
+        budget_target,
+        use_git,
+        include_signatures,
+        root_label,
+    )
 }
 
 /// Pack a directory into a budgeted index (non-blocking when saturated).
@@ -191,6 +199,7 @@ pub fn try_pack(
     budget_target: BudgetTarget,
     use_git: bool,
     include_signatures: bool,
+    root_label: Option<&str>,
 ) -> Result<PackResult> {
     let semaphore = pack_semaphore();
     let _permit = semaphore.try_acquire().ok_or(DirpackError::PackBusy {
@@ -202,6 +211,7 @@ pub fn try_pack(
         budget_target,
         use_git,
         include_signatures,
+        root_label,
     ))
 }
 
@@ -211,6 +221,7 @@ fn pack_impl(
     budget_target: BudgetTarget,
     use_git: bool,
     include_signatures: bool,
+    root_label: Option<&str>,
 ) -> PackResult {
     // Reserve space for truncation indicator (only for larger budgets)
     let effective_target = match budget_target {
@@ -230,7 +241,9 @@ fn pack_impl(
         .and_then(|n| n.to_str())
         .unwrap_or("project");
 
-    let root_str = root.to_string_lossy();
+    let root_str = root_label
+        .map(|label| label.to_string())
+        .unwrap_or_else(|| root.to_string_lossy().to_string());
 
     // Phase 1: Scan directory
     let entries = scanner::scan(root, config, use_git);
@@ -486,6 +499,7 @@ pub fn pack_default(root: &Path, target_tokens: usize) -> PackResult {
         BudgetTarget::Tokens(target_tokens),
         true,
         true,
+        None,
     )
 }
 

@@ -46,6 +46,10 @@ pub struct PackArgs {
     #[arg(short = 'o', long = "output", value_name = "FILE")]
     pub output: Option<PathBuf>,
 
+    /// Override the root path label shown in output
+    #[arg(long = "root-label", value_name = "LABEL")]
+    pub root_label: Option<String>,
+
     /// Output format: pipe, full, json [default: from config]
     #[arg(short = 'f', long = "format", value_name = "FORMAT")]
     pub format: Option<OutputFormat>,
@@ -98,6 +102,7 @@ impl Default for PackArgs {
             target_tokens: None,
             target_bytes: None,
             output: None,
+            root_label: None,
             format: None,
             config: None,
             depth: None,

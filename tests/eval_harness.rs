@@ -1,6 +1,16 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
+use dirpack::budget::BudgetTarget;
 use dirpack::eval::evaluate;
+use dirpack::packer;
+use dirpack::packer::pack;
+use dirpack::Config;
+
+fn pack_output(repo: &Path, tokens: usize) -> String {
+    let config = Config::default();
+    let result = pack(repo, &config, BudgetTarget::Tokens(tokens), false, true);
+    result.output
+}
 
 #[test]
 fn eval_metrics_on_fixture() {
@@ -27,4 +37,39 @@ fn eval_metrics_on_fixture() {
             metrics.tree_ratio
         );
     }
+}
+
+#[test]
+fn visual_inspection_500t() {
+    let repo = PathBuf::from("tests/fixtures/small_project");
+    let output = packer::pack_default(&repo, 500).output;
+    println!("\n━━━ VISUAL INSPECTION (500t) ━━━");
+    println!("{}", output);
+    println!("━━━ END ━━━\n");
+}
+
+#[test]
+fn visual_inspection_2000t() {
+    let repo = PathBuf::from("tests/fixtures/small_project");
+    let output = packer::pack_default(&repo, 2000).output;
+    println!("\n━━━ VISUAL INSPECTION (2000t) ━━━");
+    println!("{}", output);
+    println!("━━━ END ━━━\n");
+}
+
+#[test]
+fn visual_inspection_500t() {
+    let repo = PathBuf::from("tests/fixtures/small_project");
+    let output = pack_output(&repo, 500);
+    println!("\n=== VISUAL INSPECTION (500t) ===\n{}\n=== END ===\n", output);
+}
+
+#[test]
+fn visual_inspection_2000t() {
+    let repo = PathBuf::from("tests/fixtures/small_project");
+    let output = pack_output(&repo, 2000);
+    println!(
+        "\n=== VISUAL INSPECTION (2000t) ===\n{}\n=== END ===\n",
+        output
+    );
 }

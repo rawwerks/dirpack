@@ -10,6 +10,9 @@ Semantic Versioning.
 ## [0.2.0] - 2026-02-02
 
 ### Added
+- `--root-label` flag to override displayed root path in output
+- One-liner install script: `curl -fsSL https://raw.githubusercontent.com/rawwerks/dirpack/master/install.sh | bash`
+- GitHub release workflow for pre-built binaries (Linux/macOS, x86_64/aarch64)
 - Truncation indicator `[+N files truncated]` shows what was cut from output
 - Pack concurrency limiter via `DIRPACK_PACK_CONCURRENCY_LIMIT` env var
 - Budget caps and safe config overrides to prevent runaway scanning

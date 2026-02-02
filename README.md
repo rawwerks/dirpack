@@ -4,7 +4,7 @@
 
 dirpack creates compressed directory representations that fit within token/byte budgets. Unlike other tools, it uses **progressive disclosure**—including structure first, then signatures, then content—stopping exactly when the budget is exhausted.
 
-dirpack was inpired by [recent research from Jude Gao at Vercel](https://vercel.com/blog/agents-md-outperforms-skills-in-our-agent-evals), which suggests that putting a "compressed" index of the directory directly inside `AGENTS.md` out performs the "progressive disclore" strategy recommended by [Agent Skills](https://github.com/agentskills/agentskills)
+dirpack was inspired by [recent research from Jude Gao at Vercel](https://vercel.com/blog/agents-md-outperforms-skills-in-our-agent-evals), which suggests that putting a "compressed" index of the directory directly inside `AGENTS.md` outperforms the "progressive disclosure" strategy recommended by [Agent Skills](https://github.com/agentskills/agentskills).
 
 ## Features
 
@@ -15,6 +15,16 @@ dirpack was inpired by [recent research from Jude Gao at Vercel](https://vercel.
 - **Configurable**: Priority rules, file categories, exclude patterns via TOML
 
 ## Installation
+
+### Quick Install (recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/rawwerks/dirpack/master/install.sh | bash
+```
+
+This downloads a pre-built binary for your platform and installs it to `~/.local/bin`.
+
+### Using Cargo
 
 ```bash
 cargo install dirpack
@@ -125,6 +135,7 @@ dirpack pack [PATH] [OPTIONS]
   -f, --format <FORMAT>     Output: pipe, full, json
   -o, --output <FILE>       Write to file instead of stdout
   -c, --config <FILE>       Custom config path
+  --root-label <LABEL>      Override root path in output (e.g., '.')
   --no-git                  Don't use git ls-files
   --no-signatures           Skip tree-sitter extraction
   -v, --verbose             Show stats

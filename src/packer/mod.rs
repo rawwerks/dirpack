@@ -467,6 +467,28 @@ fn pack_impl(
         }
     }
 
+    // Phase 3: CONTENT
+    if !budget.is_exhausted() {
+        for file in &files_by_priority {
+            if budget.is_exhausted() {
+                break;
+            }
+
+            let Some(content_text) = content::read_entry_content(file) else {
+                continue;
+            };
+
+            let rel_path = file.relative_path.to_string_lossy().to_string();
+            let safe_content = sanitize_content_for_pipe(&content_text);
+            let segment = format!("CONTENT:{}\n```\n{}\n```", rel_path, safe_content);
+
+            if !push_segment(&mut segments, &mut budget, segment) {
+                // Try the next file in case a smaller one fits.
+                continue;
+            }
+        }
+    }
+
     // Add truncation indicator if anything was cut
     // Space was reserved upfront via TRUNCATION_INDICATOR_RESERVE
     if let Some(indicator) = truncation.format_indicator() {
@@ -771,4 +793,8 @@ fn top_level_dir(path: &Path) -> String {
             }
         }
     }
+}
+
+fn sanitize_content_for_pipe(content: &str) -> String {
+    content.replace('|', "<PIPE>")
 }

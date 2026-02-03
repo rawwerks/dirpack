@@ -119,6 +119,7 @@ fn parse_pipe(output: &str) -> ParsedPipe {
         if part.starts_with('[')
             || part.starts_with("root:")
             || part.starts_with("IMPORTANT:")
+            || part.starts_with("CONTENT:")
         {
             continue;
         }

@@ -85,7 +85,7 @@ fn test_spine_exceeds_budget() {
         false,
     );
     // With a tiny budget and a huge flat dir, tree segments should be omitted.
-    assert!(!output.contains("file001.rs"));
+    assert!(!output.contains(".:{file001.rs"));
 }
 
 #[test]
@@ -406,7 +406,7 @@ fn test_flat_1000_files_root_listing() {
         false,
     );
     assert!(output.contains("root:"));
-    assert!(!output.contains("file_0001.txt"));
+    assert!(!output.contains(".:{file_0001.txt"));
 }
 
 #[test]

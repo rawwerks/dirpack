@@ -11,6 +11,9 @@ Semantic Versioning.
 - Use unused full-content budget for snippets so content fills available budget.
 - Apply per-file snippet cap only when the snippet pool is tight.
 
+### Added
+- Eval metrics now report budget utilization ratio and include a utilization guard on a content-heavy fixture.
+
 ## [0.3.0] - 2026-02-03
 
 ### Added

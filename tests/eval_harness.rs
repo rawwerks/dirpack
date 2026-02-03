@@ -31,6 +31,19 @@ fn eval_metrics_on_fixture() {
 }
 
 #[test]
+fn eval_utilization_on_content_fixture() {
+    let repo = PathBuf::from("tests/fixtures/content_budget");
+    let report = evaluate(&repo, &[1000]);
+    let metrics = &report.budgets[0];
+
+    assert!(
+        metrics.utilization_ratio >= 0.8,
+        "utilization ratio {}",
+        metrics.utilization_ratio
+    );
+}
+
+#[test]
 fn visual_inspection_500t() {
     let repo = PathBuf::from("tests/fixtures/small_project");
     let output = packer::pack_default(&repo, 500).output;

@@ -23,6 +23,7 @@ pub struct EvalReport {
 pub struct EvalMetrics {
     pub target_tokens: usize,
     pub actual_tokens: usize,
+    pub utilization_ratio: f64,
     pub elapsed_ms: u64,
     pub tokens_per_sec: f64,
     pub overshoot_ratio: f64,
@@ -77,6 +78,11 @@ fn compute_metrics(
     } else {
         0.0
     };
+    let utilization_ratio = if target > 0 {
+        actual_tokens as f64 / target as f64
+    } else {
+        0.0
+    };
 
     let parsed = parse_pipe(output);
     let tree_tokens = tokenizer::count_tokens(&parsed.tree_segments.join("|"));
@@ -91,6 +97,7 @@ fn compute_metrics(
     EvalMetrics {
         target_tokens: target,
         actual_tokens,
+        utilization_ratio,
         elapsed_ms,
         tokens_per_sec,
         overshoot_ratio,

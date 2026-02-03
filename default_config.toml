@@ -124,3 +124,11 @@ include_classes = true
 include_types = true
 include_constants = true
 max_signature_length = 200
+
+# Content inclusion (progressive disclosure phase 4)
+[content]
+enabled = true
+full_budget_ratio = 0.6
+max_full_tokens = 500
+max_snippet_tokens = 200
+exclude_patterns = ["*.lock", "*.min.js", "*.min.css"]

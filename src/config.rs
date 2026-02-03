@@ -18,6 +18,7 @@ pub struct Config {
     pub priority_rules: Vec<PriorityRule>,
     pub exclude: ExcludeConfig,
     pub signatures: SignatureConfig,
+    pub content: ContentConfig,
 }
 
 pub use crate::limits::{
@@ -91,6 +92,7 @@ impl Default for Config {
             priority_rules: default_priority_rules(),
             exclude: ExcludeConfig::default(),
             signatures: SignatureConfig::default(),
+            content: ContentConfig::default(),
         }
     }
 }
@@ -300,6 +302,32 @@ impl Default for SignatureConfig {
             include_types: true,
             include_constants: true,
             max_signature_length: 200,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
+pub struct ContentConfig {
+    pub enabled: bool,
+    pub full_budget_ratio: f64,
+    pub max_full_tokens: usize,
+    pub max_snippet_tokens: usize,
+    pub exclude_patterns: Vec<String>,
+}
+
+impl Default for ContentConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            full_budget_ratio: 0.6,
+            max_full_tokens: 500,
+            max_snippet_tokens: 200,
+            exclude_patterns: vec![
+                "*.lock".to_string(),
+                "*.min.js".to_string(),
+                "*.min.css".to_string(),
+            ],
         }
     }
 }

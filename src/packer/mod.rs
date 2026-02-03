@@ -32,6 +32,7 @@ use crate::error::{DirpackError, Result};
 use crate::priority;
 use crate::scanner;
 use crate::scanner::entry::FileEntry;
+use crate::tokenizer;
 
 use signatures::SignatureExtractor;
 
@@ -468,23 +469,137 @@ fn pack_impl(
     }
 
     // Phase 3: CONTENT
-    if !budget.is_exhausted() {
-        for file in &files_by_priority {
-            if budget.is_exhausted() {
-                break;
+    if config.content.enabled && !budget.is_exhausted() {
+        let remaining = budget.remaining();
+        if remaining > 0 {
+            let ratio = config
+                .content
+                .full_budget_ratio
+                .clamp(0.0, 1.0);
+            let full_limit = ((remaining as f64) * ratio).round() as usize;
+            let snippet_limit = remaining.saturating_sub(full_limit);
+
+            let mut full_budget = make_budget_like(budget.target, full_limit);
+            let mut snippet_budget = make_budget_like(budget.target, snippet_limit);
+
+            let max_full_units = units_from_tokens(config.content.max_full_tokens, budget.target);
+            let max_snippet_units =
+                units_from_tokens(config.content.max_snippet_tokens, budget.target);
+
+            struct ContentCandidate {
+                rel_path: String,
+                safe_content: String,
+                cost: usize,
+                priority: i32,
             }
 
-            let Some(content_text) = content::read_entry_content(file) else {
-                continue;
-            };
+            let mut candidates: Vec<ContentCandidate> = Vec::new();
+            for file in &files_by_priority {
+                if should_skip_content(file, config) {
+                    continue;
+                }
+                let Some(content_text) = content::read_entry_content(file) else {
+                    continue;
+                };
+                let rel_path = file.relative_path.to_string_lossy().to_string();
+                let safe_content = sanitize_content_for_pipe(&content_text);
+                let segment = format!("CONTENT:{}\n```\n{}\n```", rel_path, safe_content);
+                let cost = content_cost_units(&segment, budget.target);
+                let priority_score = priority::calculate_priority(
+                    file,
+                    &config.priority_rules,
+                    &config.categories,
+                    &config.priority,
+                );
+                candidates.push(ContentCandidate {
+                    rel_path,
+                    safe_content,
+                    cost,
+                    priority: priority_score,
+                });
+            }
 
-            let rel_path = file.relative_path.to_string_lossy().to_string();
-            let safe_content = sanitize_content_for_pipe(&content_text);
-            let segment = format!("CONTENT:{}\n```\n{}\n```", rel_path, safe_content);
+            candidates.sort_by(|a, b| {
+                b.priority
+                    .cmp(&a.priority)
+                    .then_with(|| a.cost.cmp(&b.cost))
+            });
 
-            if !push_segment(&mut segments, &mut budget, segment) {
-                // Try the next file in case a smaller one fits.
-                continue;
+            let mut remaining_candidates: Vec<ContentCandidate> = Vec::new();
+            for candidate in candidates {
+                if budget.is_exhausted() || full_budget.is_exhausted() {
+                    remaining_candidates.push(candidate);
+                    continue;
+                }
+
+                if candidate.cost > max_full_units {
+                    remaining_candidates.push(candidate);
+                    continue;
+                }
+
+                let segment = format!("CONTENT:{}\n```\n{}\n```", candidate.rel_path, candidate.safe_content);
+                let candidate_output = if segments.is_empty() {
+                    segment.clone()
+                } else {
+                    format!("|{}", segment)
+                };
+
+                if full_budget.would_fit(&candidate_output) && budget.would_fit(&candidate_output) {
+                    if push_segment(&mut segments, &mut budget, segment) {
+                        let _ = full_budget.try_add(&candidate_output);
+                    } else {
+                        remaining_candidates.push(candidate);
+                    }
+                } else {
+                    remaining_candidates.push(candidate);
+                }
+            }
+
+            let total_remaining = remaining_candidates.len();
+            for (idx, candidate) in remaining_candidates.into_iter().enumerate() {
+                if budget.is_exhausted() || snippet_budget.is_exhausted() {
+                    break;
+                }
+
+                let files_left = total_remaining.saturating_sub(idx);
+                if files_left == 0 {
+                    break;
+                }
+
+                let mut per_file_limit = snippet_budget.remaining() / files_left;
+                if per_file_limit == 0 {
+                    per_file_limit = 1;
+                }
+                if max_snippet_units > 0 {
+                    per_file_limit = per_file_limit.min(max_snippet_units);
+                }
+                let max_units = per_file_limit
+                    .min(snippet_budget.remaining())
+                    .min(budget.remaining());
+                if max_units == 0 {
+                    break;
+                }
+
+                let Some(segment) = build_snippet_segment(
+                    &candidate.rel_path,
+                    &candidate.safe_content,
+                    budget.target,
+                    max_units,
+                ) else {
+                    continue;
+                };
+
+                let candidate_output = if segments.is_empty() {
+                    segment.clone()
+                } else {
+                    format!("|{}", segment)
+                };
+
+                if snippet_budget.would_fit(&candidate_output) && budget.would_fit(&candidate_output) {
+                    if push_segment(&mut segments, &mut budget, segment) {
+                        let _ = snippet_budget.try_add(&candidate_output);
+                    }
+                }
             }
         }
     }
@@ -797,4 +912,117 @@ fn top_level_dir(path: &Path) -> String {
 
 fn sanitize_content_for_pipe(content: &str) -> String {
     content.replace('|', "<PIPE>")
+}
+
+fn should_skip_content(entry: &FileEntry, config: &Config) -> bool {
+    if entry.is_dir {
+        return true;
+    }
+    config
+        .content
+        .exclude_patterns
+        .iter()
+        .any(|pattern| priority::matches_pattern(&entry.relative_path, pattern))
+}
+
+fn make_budget_like(target: BudgetTarget, limit: usize) -> Budget {
+    match target {
+        BudgetTarget::Tokens(_) => Budget::tokens(limit),
+        BudgetTarget::Bytes(_) => Budget::bytes(limit),
+    }
+}
+
+fn units_from_tokens(tokens: usize, target: BudgetTarget) -> usize {
+    match target {
+        BudgetTarget::Tokens(_) => tokens,
+        BudgetTarget::Bytes(_) => tokens.saturating_mul(4),
+    }
+}
+
+fn content_cost_units(content: &str, target: BudgetTarget) -> usize {
+    match target {
+        BudgetTarget::Tokens(_) => tokenizer::count_tokens(content),
+        BudgetTarget::Bytes(_) => content.len(),
+    }
+}
+
+fn build_snippet_segment(
+    rel_path: &str,
+    safe_content: &str,
+    target: BudgetTarget,
+    max_units: usize,
+) -> Option<String> {
+    let header = format!("CONTENT:{}\n```\n", rel_path);
+    let footer = "\n```";
+    let header_cost = content_cost_units(&header, target);
+    let footer_cost = content_cost_units(footer, target);
+    let content_budget = max_units.saturating_sub(header_cost + footer_cost);
+    if content_budget == 0 {
+        return None;
+    }
+
+    let (truncated, _) = truncate_content_to_budget(safe_content, target, content_budget);
+    if truncated.is_empty() {
+        return None;
+    }
+
+    Some(format!("{}{}{}", header, truncated, footer))
+}
+
+fn truncate_content_to_budget(
+    content: &str,
+    target: BudgetTarget,
+    max_units: usize,
+) -> (String, bool) {
+    if max_units == 0 {
+        return (String::new(), true);
+    }
+
+    let mut out = String::new();
+    let mut used = 0usize;
+    let mut truncated = false;
+
+    for (idx, line) in content.lines().enumerate() {
+        let candidate = if idx == 0 {
+            line.to_string()
+        } else {
+            format!("\n{}", line)
+        };
+        let cost = content_cost_units(&candidate, target);
+        if used.saturating_add(cost) > max_units {
+            truncated = true;
+            break;
+        }
+        out.push_str(&candidate);
+        used += cost;
+    }
+
+    if out.is_empty() && !content.is_empty() {
+        let mut first = true;
+        for word in content.split_whitespace() {
+            let candidate = if first {
+                word.to_string()
+            } else {
+                format!(" {}", word)
+            };
+            let cost = content_cost_units(&candidate, target);
+            if used.saturating_add(cost) > max_units {
+                truncated = true;
+                break;
+            }
+            out.push_str(&candidate);
+            used += cost;
+            first = false;
+        }
+    }
+
+    if truncated {
+        let suffix = "\n... [truncated]";
+        let cost = content_cost_units(suffix, target);
+        if used.saturating_add(cost) <= max_units {
+            out.push_str(suffix);
+        }
+    }
+
+    (out, truncated)
 }

@@ -33,7 +33,7 @@ pub fn calculate_priority(
 }
 
 /// Check if a path matches a glob pattern.
-fn matches_pattern(path: &Path, pattern: &str) -> bool {
+pub fn matches_pattern(path: &Path, pattern: &str) -> bool {
     let path_str = path.to_string_lossy();
 
     // Handle ** prefix (matches any path)

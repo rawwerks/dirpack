@@ -1,1 +1,379 @@
-[dirpack]|root: .|IMPORTANT: # dirpack|src:{lib.rs,main.rs,archive.rs,budget.rs,cli.rs,config.rs,error.rs,eval.rs,limits.rs,priority.rs,security.rs,tokenizer.rs}|.:{Cargo.toml,AGENTS.md,CHANGELOG.md,Cargo.lock,LICENSE,README.md,default_config.toml,install.sh}|internal-private-docs:{DESIGN.md.age,FEEDBACK.md.age,HANDOFF.md.age,POSTMORTEM.md.age,SPACE_FILLING.md.age,recipients.txt}|baselines:{CHANGELOG.md,STABLE-V1-SUMMARY.md,SUMMARY.md,build123d-baseline-v2.json,build123d-baseline.json,build123d-incremental.json,build123d-lopsidedness-fix.json,build123d-post-fix.json,build123d-stable-v1.json,build123d-tree-ratio-fix.json,dirpack-eval.json,dspy-baseline-v2.json,dspy-baseline.json,dspy-eval.json,dspy-incremental.json,dspy-lopsidedness-fix.json,dspy-post-fix.json,dspy-stable-v1.json,dspy-tree-ratio-fix.json,small-project-baseline-v2.json,small-project-baseline.json}|eval:{README.md,baseline.json}|examples:{README.md,dirpack-1000tok.txt,dirpack-2000tok.json,dirpack-2000tok.txt,dirpack-5000tok.txt}|scripts:{dogfood-eval.sh,dogfood-repos.txt,eval-summary.sh,eval.sh}|tests:{archive_adversarial.rs,archive_entry_types.rs,archive_security.rs,budget_caps.rs,edge_cases.rs,eval_harness.rs,path_traversal.rs,security_overrides.rs,symlink_security.rs}|src/format:{full.rs,json.rs,mod.rs,pipe.rs}|src/packer:{content.rs,mod.rs,signatures.rs,spine.rs}|src/scanner:{entry.rs,git.rs,mod.rs,walk.rs}|"tests/fixtures/special_names:{\346\227\245\346\234\254\350\252\236.rs"}|tests/fixtures/binary_only:{doc.pdf,image.png,photo.jpg}|tests/fixtures/config_heavy:{app.toml,config_01.json,config_01.yaml,config_02.json,config_02.yaml,config_03.json,config_03.yaml,config_04.json,config_04.yaml,config_05.json,config_05.yaml,config_06.json,config_06.yaml,config_07.json,config_07.yaml,config_08.json,config_08.yaml,config_09.json,config_09.yaml,config_10.json,config_10.yaml,config_11.json,config_11.yaml,config_12.json,config_12.yaml,config_13.json,config_13.yaml,config_14.json,config_14.yaml,config_15.json,config_15.yaml,config_16.json,config_16.yaml,config_17.json,config_17.yaml,config_18.json,config_18.yaml,config_19.json,config_19.yaml,config_20.json,config_20.yaml}|tests/fixtures/deep_nesting:{shallow.rs}|tests/fixtures/flat_1000_files:{file_0001.txt,file_0002.txt,file_0003.txt,file_0004.txt,file_0005.txt,file_0006.txt,file_0007.txt,file_0008.txt,file_0009.txt,file_0010.txt,file_0011.txt,file_0012.txt,file_0013.txt,file_0014.txt,file_0015.txt,file_0016.txt,file_0017.txt,file_0018.txt,file_0019.txt,file_0020.txt,file_0021.txt,file_0022.txt,file_0023.txt,file_0024.txt,file_0025.txt,file_0026.txt,file_0027.txt,file_0028.txt,file_0029.txt,file_0030.txt,file_0031.txt,file_0032.txt,file_0033.txt,file_0034.txt,file_0035.txt,file_0036.txt,file_0037.txt,file_0038.txt,file_0039.txt,file_0040.txt,file_0041.txt,file_0042.txt,file_0043.txt,file_0044.txt,file_0045.txt,file_0046.txt,file_0047.txt,file_0048.txt,file_0049.txt,file_0050.txt,file_0051.txt,file_0052.txt,file_0053.txt,file_0054.txt,file_0055.txt,file_0056.txt,file_0057.txt,file_0058.txt,file_0059.txt,file_0060.txt,file_0061.txt,file_0062.txt,file_0063.txt,file_0064.txt,file_0065.txt,file_0066.txt,file_0067.txt,file_0068.txt,file_0069.txt,file_0070.txt,file_0071.txt,file_0072.txt,file_0073.txt,file_0074.txt,file_0075.txt,file_0076.txt,file_0077.txt,file_0078.txt,file_0079.txt,file_0080.txt,file_0081.txt,file_0082.txt,file_0083.txt,file_0084.txt,file_0085.txt,file_0086.txt,file_0087.txt,file_0088.txt,file_0089.txt,file_0090.txt,file_0091.txt,file_0092.txt,file_0093.txt,file_0094.txt,file_0095.txt,file_0096.txt,file_0097.txt,file_0098.txt,file_0099.txt,file_0100.txt,file_0101.txt,file_0102.txt,file_0103.txt,file_0104.txt,file_0105.txt,file_0106.txt,file_0107.txt,file_0108.txt,file_0109.txt,file_0110.txt,file_0111.txt,file_0112.txt,file_0113.txt,file_0114.txt,file_0115.txt,file_0116.txt,file_0117.txt,file_0118.txt,file_0119.txt,file_0120.txt,file_0121.txt,file_0122.txt,file_0123.txt,file_0124.txt,file_0125.txt,file_0126.txt,file_0127.txt,file_0128.txt,file_0129.txt,file_0130.txt,file_0131.txt,file_0132.txt,file_0133.txt,file_0134.txt,file_0135.txt,file_0136.txt,file_0137.txt,file_0138.txt,file_0139.txt,file_0140.txt,file_0141.txt,file_0142.txt,file_0143.txt,file_0144.txt,file_0145.txt,file_0146.txt,file_0147.txt,file_0148.txt,file_0149.txt,file_0150.txt,file_0151.txt,file_0152.txt,file_0153.txt,file_0154.txt,file_0155.txt,file_0156.txt,file_0157.txt,file_0158.txt,file_0159.txt,file_0160.txt,file_0161.txt,file_0162.txt,file_0163.txt,file_0164.txt,file_0165.txt,file_0166.txt,file_0167.txt,file_0168.txt,file_0169.txt,file_0170.txt,file_0171.txt,file_0172.txt,file_0173.txt,file_0174.txt,file_0175.txt,file_0176.txt,file_0177.txt,file_0178.txt,file_0179.txt,file_0180.txt,file_0181.txt,file_0182.txt,file_0183.txt,file_0184.txt,file_0185.txt,file_0186.txt,file_0187.txt,file_0188.txt,file_0189.txt,file_0190.txt,file_0191.txt,file_0192.txt,file_0193.txt,file_0194.txt,file_0195.txt,file_0196.txt,file_0197.txt,file_0198.txt,file_0199.txt,file_0200.txt}|tests/fixtures/generated_files:{main.rs}|tests/fixtures/gitignore:{kept.txt}|tests/fixtures/hidden_files:{main.rs,visible.txt}|tests/fixtures/long_names:{aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.rs}|tests/fixtures/monorepo:{README.md}|tests/fixtures/no_extensions:{Dockerfile,LICENSE,Makefile}|tests/fixtures/root_only:{Cargo.toml,lib.rs,main.rs,README.md,utils.rs}|tests/fixtures/small_project:{Cargo.toml,README.md}|tests/fixtures/special_chars:{bracket[1].rs,double"quote.rs,quote'file.rs,space name.rs}|tests/fixtures/special_names:{brackets(1).rs,long_name_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.rs,name with spaces [v1].rs,quote'file.rs,日本語.rs}|tests/fixtures/symlinks:{target.txt}|tests/fixtures/unicode_names:{emoji_😀.rs,日本語.rs}|tests/fixtures/untracked_files:{tracked.txt}|src/lib.rs:mod budget,mod archive,mod cli,mod config,mod error,mod eval,mod format,mod limits,mod packer,mod priority,mod scanner,mod security,mod tokenizer|tests/fixtures/empty_dirs/src/main.rs:fn main()|src/main.rs:fn main() -> anyhow::Result<()>,fn run_pack(args: PackArgs) -> anyhow::Result<()>,fn run_init(args: dirpack::cli::InitArgs) -> anyhow::Result<()>,fn run_tree(args: dirpack::cli::TreeArgs) -> anyhow::Result<()>,fn run_eval(args: dirpack::cli::EvalArgs) -> anyhow::Result<()>,fn format_full(result: &packer::PackResult) -> String,fn format_json(result: &packer::PackResult) -> String|tests/fixtures/generated_files/src/main.rs:fn main()|src/format/mod.rs:mod full,mod json,mod pipe,pub struct PackOutput,pub fn new(title: impl Into<String>, root: impl Into<String>) -> Self,pub struct DirectoryListing,pub fn new(name: impl Into<String>, files: Vec<String>) -> Self,pub struct FileOutput,pub fn new(path: impl Into<String>) -> Self,pub struct BudgetSummary,pub trait Formatter|tests/fixtures/signatures_heavy/src/lib.rs:pub fn func1(),pub fn func2(),pub fn func3(),pub fn func4(),pub fn func5(),pub fn func6(),pub fn func7(),pub fn func8()|src/packer/mod.rs:mod content,mod signatures,mod spine,const TREE_BUDGET_RATIO: f64 = 0.30;,const PACK_CONCURRENCY_ENV: &str = "DIRPACK_PACK_CONCURRENCY_LIMIT";,const PACK_RETRY_AFTER_ENV: &str = "DIRPACK_PACK_RETRY_AFTER_SECS";,const DEFAULT_RETRY_AFTER_SECS: u64 = 1;,struct PackSemaphore,fn new() -> Self,fn try_acquire(&'static self) -> Option<PackPermit>,fn acquire(&'static self) -> PackPermit,struct PackPermit,fn drop(&mut self),fn pack_semaphore() -> &'static PackSemaphore,fn read_env_usize(name: &str) -> Option<usize>,fn read_env_u64(name: &str) -> Option<u64>,fn default_pack_limit() -> usize,pub struct TruncationInfo|tests/fixtures/small_project/src/lib.rs:mod config,mod utils,pub fn init(),pub fn process(data: &str) -> String,pub fn validate(config: &Config) -> bool|src/cli.rs:pub struct Cli|tests/fixtures/small_project/src/main.rs:fn main(),fn run_app(config: Config)|tests/fixtures/monorepo/projA/src/main.rs:fn main()|tests/fixtures/monorepo/projB/src/main.rs:fn main()|tests/fixtures/submodule_like/submodule_repo/src/lib.rs:pub fn submodule()|tests/fixtures/generated_files/main.rs:fn main()|tests/fixtures/hidden_files/main.rs:fn main()|tests/fixtures/root_only/lib.rs:pub fn lib()|tests/fixtures/root_only/main.rs:fn main()|tests/fixtures/tree_heavy/main.rs:fn main()|tests/fixtures/monorepo/apps/app1/src/main.rs:fn main()|tests/fixtures/monorepo/apps/app2/src/main.rs:fn main()|tests/fixtures/monorepo/packages/pkg1/src/lib.rs:pub fn lib()|tests/archive_adversarial.rs:fn test_unicode_dot_dot(),fn test_unicode_slash(),fn test_null_byte_in_path(),fn test_traversal_after_descent(),fn test_traversal_mixed_with_curdir(),fn test_empty_path(),fn test_curdir_only(),fn test_multiple_curdir(),fn test_double_slash(),fn test_trailing_slash(),fn test_windows_drive_letter(),fn test_windows_unc_path(),fn test_windows_device_names(),fn test_path_exactly_at_limit(),fn test_path_one_over_limit(),fn test_entry_type_other()|[+201 more files truncated]
+[dirpack]|root: .|IMPORTANT: # dirpack|src:{lib.rs,main.rs,archive.rs,budget.rs,cli.rs,config.rs,error.rs,eval.rs,limits.rs,priority.rs,security.rs,tokenizer.rs}|.:{Cargo.toml,AGENTS.md,CHANGELOG.md,Cargo.lock,LICENSE,README.md,default_config.toml,install.sh}|internal-private-docs:{DESIGN.md.age,FEEDBACK.md.age,HANDOFF.md.age,POSTMORTEM.md.age,SPACE_FILLING.md.age,recipients.txt}|baselines:{CHANGELOG.md,STABLE-V1-SUMMARY.md,SUMMARY.md,build123d-baseline-v2.json,build123d-baseline.json,build123d-incremental.json,build123d-lopsidedness-fix.json,build123d-post-fix.json,build123d-stable-v1.json,build123d-tree-ratio-fix.json,dirpack-eval.json,dspy-baseline-v2.json,dspy-baseline.json,dspy-eval.json,dspy-incremental.json,dspy-lopsidedness-fix.json,dspy-post-fix.json,dspy-stable-v1.json,dspy-tree-ratio-fix.json,small-project-baseline-v2.json,small-project-baseline.json}|eval:{README.md,baseline.json}|examples:{README.md,dirpack-1000tok.txt,dirpack-2000tok.json,dirpack-2000tok.txt,dirpack-5000tok.txt}|scripts:{dogfood-eval.sh,dogfood-repos.txt,eval-summary.sh,eval.sh}|tests:{archive_adversarial.rs,archive_entry_types.rs,archive_security.rs,budget_caps.rs,edge_cases.rs,eval_harness.rs,path_traversal.rs,security_overrides.rs,symlink_security.rs}|src/format:{full.rs,json.rs,mod.rs,pipe.rs}|src/packer:{content.rs,mod.rs,signatures.rs,spine.rs}|src/scanner:{entry.rs,git.rs,mod.rs,walk.rs}|"tests/fixtures/special_names:{\346\227\245\346\234\254\350\252\236.rs"}|tests/fixtures/binary_only:{doc.pdf,image.png,photo.jpg}|tests/fixtures/config_heavy:{app.toml,config_01.json,config_01.yaml,config_02.json,config_02.yaml,config_03.json,config_03.yaml,config_04.json,config_04.yaml,config_05.json,config_05.yaml,config_06.json,config_06.yaml,config_07.json,config_07.yaml,config_08.json,config_08.yaml,config_09.json,config_09.yaml,config_10.json,config_10.yaml,config_11.json,config_11.yaml,config_12.json,config_12.yaml,config_13.json,config_13.yaml,config_14.json,config_14.yaml,config_15.json,config_15.yaml,config_16.json,config_16.yaml,config_17.json,config_17.yaml,config_18.json,config_18.yaml,config_19.json,config_19.yaml,config_20.json,config_20.yaml}|tests/fixtures/deep_nesting:{shallow.rs}|tests/fixtures/flat_1000_files:{file_0001.txt,file_0002.txt,file_0003.txt,file_0004.txt,file_0005.txt,file_0006.txt,file_0007.txt,file_0008.txt,file_0009.txt,file_0010.txt,file_0011.txt,file_0012.txt,file_0013.txt,file_0014.txt,file_0015.txt,file_0016.txt,file_0017.txt,file_0018.txt,file_0019.txt,file_0020.txt,file_0021.txt,file_0022.txt,file_0023.txt,file_0024.txt,file_0025.txt,file_0026.txt,file_0027.txt,file_0028.txt,file_0029.txt,file_0030.txt,file_0031.txt,file_0032.txt,file_0033.txt,file_0034.txt,file_0035.txt,file_0036.txt,file_0037.txt,file_0038.txt,file_0039.txt,file_0040.txt,file_0041.txt,file_0042.txt,file_0043.txt,file_0044.txt,file_0045.txt,file_0046.txt,file_0047.txt,file_0048.txt,file_0049.txt,file_0050.txt,file_0051.txt,file_0052.txt,file_0053.txt,file_0054.txt,file_0055.txt,file_0056.txt,file_0057.txt,file_0058.txt,file_0059.txt,file_0060.txt,file_0061.txt,file_0062.txt,file_0063.txt,file_0064.txt,file_0065.txt,file_0066.txt,file_0067.txt,file_0068.txt,file_0069.txt,file_0070.txt,file_0071.txt,file_0072.txt,file_0073.txt,file_0074.txt,file_0075.txt,file_0076.txt,file_0077.txt,file_0078.txt,file_0079.txt,file_0080.txt,file_0081.txt,file_0082.txt,file_0083.txt,file_0084.txt,file_0085.txt,file_0086.txt,file_0087.txt,file_0088.txt,file_0089.txt,file_0090.txt,file_0091.txt,file_0092.txt,file_0093.txt,file_0094.txt,file_0095.txt,file_0096.txt,file_0097.txt,file_0098.txt,file_0099.txt,file_0100.txt,file_0101.txt,file_0102.txt,file_0103.txt,file_0104.txt,file_0105.txt,file_0106.txt,file_0107.txt,file_0108.txt,file_0109.txt,file_0110.txt,file_0111.txt,file_0112.txt,file_0113.txt,file_0114.txt,file_0115.txt,file_0116.txt,file_0117.txt,file_0118.txt,file_0119.txt,file_0120.txt,file_0121.txt,file_0122.txt,file_0123.txt,file_0124.txt,file_0125.txt,file_0126.txt,file_0127.txt,file_0128.txt,file_0129.txt,file_0130.txt,file_0131.txt,file_0132.txt,file_0133.txt,file_0134.txt,file_0135.txt,file_0136.txt,file_0137.txt,file_0138.txt,file_0139.txt,file_0140.txt,file_0141.txt,file_0142.txt,file_0143.txt,file_0144.txt,file_0145.txt,file_0146.txt,file_0147.txt,file_0148.txt,file_0149.txt,file_0150.txt,file_0151.txt,file_0152.txt,file_0153.txt,file_0154.txt,file_0155.txt,file_0156.txt,file_0157.txt,file_0158.txt,file_0159.txt,file_0160.txt,file_0161.txt,file_0162.txt,file_0163.txt,file_0164.txt,file_0165.txt,file_0166.txt,file_0167.txt,file_0168.txt,file_0169.txt,file_0170.txt,file_0171.txt,file_0172.txt,file_0173.txt,file_0174.txt,file_0175.txt,file_0176.txt,file_0177.txt,file_0178.txt,file_0179.txt,file_0180.txt,file_0181.txt,file_0182.txt,file_0183.txt,file_0184.txt,file_0185.txt,file_0186.txt,file_0187.txt,file_0188.txt,file_0189.txt,file_0190.txt,file_0191.txt,file_0192.txt,file_0193.txt,file_0194.txt,file_0195.txt,file_0196.txt,file_0197.txt,file_0198.txt,file_0199.txt,file_0200.txt}|tests/fixtures/generated_files:{main.rs}|tests/fixtures/gitignore:{kept.txt}|tests/fixtures/hidden_files:{main.rs,visible.txt}|tests/fixtures/long_names:{aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.rs}|tests/fixtures/monorepo:{README.md}|tests/fixtures/no_extensions:{Dockerfile,LICENSE,Makefile}|tests/fixtures/root_only:{Cargo.toml,lib.rs,main.rs,README.md,utils.rs}|tests/fixtures/small_project:{Cargo.toml,README.md}|tests/fixtures/special_chars:{bracket[1].rs,double"quote.rs,quote'file.rs,space name.rs}|tests/fixtures/special_names:{brackets(1).rs,long_name_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.rs,name with spaces [v1].rs,quote'file.rs,日本語.rs}|tests/fixtures/symlinks:{target.txt}|tests/fixtures/unicode_names:{emoji_😀.rs,日本語.rs}|tests/fixtures/untracked_files:{tracked.txt}|src/lib.rs:mod budget,mod archive,mod cli,mod config,mod error,mod eval,mod format,mod limits,mod packer,mod priority,mod scanner,mod security,mod tokenizer|tests/fixtures/empty_dirs/src/main.rs:fn main()|src/main.rs:fn main() -> anyhow::Result<()>,fn run_pack(args: PackArgs) -> anyhow::Result<()>,fn run_init(args: dirpack::cli::InitArgs) -> anyhow::Result<()>,fn run_tree(args: dirpack::cli::TreeArgs) -> anyhow::Result<()>,fn run_eval(args: dirpack::cli::EvalArgs) -> anyhow::Result<()>,fn format_full(result: &packer::PackResult) -> String,fn format_json(result: &packer::PackResult) -> String|tests/fixtures/generated_files/src/main.rs:fn main()|src/format/mod.rs:mod full,mod json,mod pipe,pub struct PackOutput,pub fn new(title: impl Into<String>, root: impl Into<String>) -> Self,pub struct DirectoryListing,pub fn new(name: impl Into<String>, files: Vec<String>) -> Self,pub struct FileOutput,pub fn new(path: impl Into<String>) -> Self,pub struct BudgetSummary,pub trait Formatter|tests/fixtures/signatures_heavy/src/lib.rs:pub fn func1(),pub fn func2(),pub fn func3(),pub fn func4(),pub fn func5(),pub fn func6(),pub fn func7(),pub fn func8()|src/packer/mod.rs:mod content,mod signatures,mod spine,const TREE_BUDGET_RATIO: f64 = 0.30;,const PACK_CONCURRENCY_ENV: &str = "DIRPACK_PACK_CONCURRENCY_LIMIT";,const PACK_RETRY_AFTER_ENV: &str = "DIRPACK_PACK_RETRY_AFTER_SECS";,const DEFAULT_RETRY_AFTER_SECS: u64 = 1;,struct PackSemaphore,fn new() -> Self,fn try_acquire(&'static self) -> Option<PackPermit>,fn acquire(&'static self) -> PackPermit,struct PackPermit,fn drop(&mut self),fn pack_semaphore() -> &'static PackSemaphore,fn read_env_usize(name: &str) -> Option<usize>,fn read_env_u64(name: &str) -> Option<u64>,fn default_pack_limit() -> usize,pub struct TruncationInfo|tests/fixtures/small_project/src/lib.rs:mod config,mod utils,pub fn init(),pub fn process(data: &str) -> String,pub fn validate(config: &Config) -> bool|src/cli.rs:pub struct Cli|tests/fixtures/small_project/src/main.rs:fn main(),fn run_app(config: Config)|tests/fixtures/monorepo/projA/src/main.rs:fn main()|tests/fixtures/monorepo/projB/src/main.rs:fn main()|tests/fixtures/submodule_like/submodule_repo/src/lib.rs:pub fn submodule()|tests/fixtures/generated_files/main.rs:fn main()|tests/fixtures/hidden_files/main.rs:fn main()|tests/fixtures/root_only/lib.rs:pub fn lib()|tests/fixtures/root_only/main.rs:fn main()|tests/fixtures/tree_heavy/main.rs:fn main()|tests/fixtures/monorepo/apps/app1/src/main.rs:fn main()|tests/fixtures/monorepo/apps/app2/src/main.rs:fn main()|tests/fixtures/monorepo/packages/pkg1/src/lib.rs:pub fn lib()|tests/archive_adversarial.rs:fn test_unicode_dot_dot(),fn test_unicode_slash(),fn test_null_byte_in_path(),fn test_traversal_after_descent(),fn test_traversal_mixed_with_curdir(),fn test_empty_path(),fn test_curdir_only(),fn test_multiple_curdir(),fn test_double_slash(),fn test_trailing_slash(),fn test_windows_drive_letter(),fn test_windows_unc_path(),fn test_windows_device_names(),fn test_path_exactly_at_limit(),fn test_path_one_over_limit(),fn test_entry_type_other()|CONTENT:AGENTS.md
+```
+# Agent Instructions
+
+This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
+
+## Quick Reference
+
+```bash
+bd ready              # Find available work
+bd show <id>          # View issue details
+bd update <id> --status in_progress  # Claim work
+bd close <id>         # Complete work
+bd sync               # Sync with git
+```
+
+## Landing the Plane (Session Completion)
+
+**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+
+**MANDATORY WORKFLOW:**
+
+1. **File issues for remaining work** - Create issues for anything that needs follow-up
+2. **Run quality gates** (if code changed) - Tests, linters, builds
+3. **Update issue status** - Close finished work, update in-progress items
+4. **PUSH TO REMOTE** - This is MANDATORY:
+   ```bash
+   git pull --rebase
+   bd sync
+   git push
+   git status  # MUST show "up to date with origin"
+   ```
+5. **Clean up** - Clear stashes, prune remote branches
+6. **Verify** - All changes committed AND pushed
+7. **Hand off** - Provide context for next session
+
+**CRITICAL RULES:**
+- Work is NOT complete until `git push` succeeds
+- NEVER stop before pushing - that leaves work stranded locally
+- NEVER say "ready to push when you are" - YOU must push
+- If push fails, resolve and retry until it succeeds
+
+
+```|CONTENT:README.md
+```
+# dirpack
+
+**Budgeted directory indexes for AI coding agents**
+
+dirpack creates compressed directory representations that fit within token/byte budgets. Unlike other tools, it uses **progressive disclosure**—including structure first, then signatures, then content—stopping exactly when the budget is exhausted.
+
+dirpack was inspired by [recent research from Jude Gao at Vercel](https://vercel.com/blog/agents-md-outperforms-skills-in-our-agent-evals), which suggests that putting a "compressed" index of the directory directly inside `AGENTS.md` outperforms the "progressive disclosure" strategy recommended by [Agent Skills](https://github.com/agentskills/agentskills).
+
+## Features
+
+- **Budget-aware**: Set token or byte limits; output stops at the boundary
+- **Tree-sitter signatures**: Extract function/struct/trait signatures for Rust, Go, Python, TypeScript, JavaScript, C, C++
+- **Progressive disclosure**: Spine → signatures → summaries → content
+- **Git-aware**: Uses `git ls-files` when available, respects `.gitignore`
+- **Configurable**: Priority rules, file categories, exclude patterns via TOML
+
+## Installation
+
+### Quick Install (recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/rawwerks/dirpack/master/install.sh <PIPE> bash
+```
+
+This downloads a pre-built binary for your platform and installs it to `~/.local/bin`.
+
+### Using Cargo
+
+```bash
+cargo install dirpack
+
+# or from source
+cargo install --git https://github.com/rawwerks/dirpack
+```
+
+## Quick Start
+
+```bash
+# Pack current directory with 4K token budget
+dirpack pack . -t 4000
+
+# Pack with 16KB byte budget, markdown output
+dirpack pack . -b 16000 -f full
+
+# View directory tree with priorities
+dirpack tree . --show-priority
+
+# Create default config
+dirpack init
+```
+
+## Output Formats
+
+### Pipe (default)
+
+Compact, single-line format optimized for AGENTS.md:
+
+```
+[myproject]<PIPE>root: ./path<PIPE>dirs:{src,tests}<PIPE>src:{main.rs,lib.rs}<PIPE>main.rs:fn main(),fn setup()
+```
+
+### Full
+
+Markdown with sections for structure, signatures, and content.
+
+### JSON
+
+Machine-readable output with budget stats.
+
+## Configuration
+
+Create `dirpack.toml` in your project:
+
+```toml
+[output]
+format = "pipe"
+default_budget_tokens = 4000
+
+[scanning]
+use_gitignore = true
+include_hidden = false
+max_depth = 20
+
+[signatures]
+enabled = true
+max_signature_length = 200
+
+# High-priority files get included first
+[[priority_rules]]
+pattern = "README*"
+priority = 200
+
+[[priority_rules]]
+pattern = "src/main.*"
+priority = 140
+```
+
+Run `dirpack init` to generate a full default config.
+
+## Runtime Limits
+
+`dirpack` enforces a per-process concurrency cap for pack jobs to protect CPU/IO.
+
+- `DIRPACK_PACK_CONCURRENCY_LIMIT`: max concurrent pack jobs (default: available CPU parallelism)
+- `DIRPACK_PACK_RETRY_AFTER_SECS`: suggested retry delay for saturated servers (default: 1)
+
+## How It Works
+
+1. **Scan** directory (git-aware or walkdir fallback)
+2. **Prioritize** files by pattern rules and category
+3. **Pack** progressively:
+   - Phase 1: Directory spine (always included)
+   - Phase 2: Code signatures (high-priority files first)
+   - Phase 3: Doc summaries (README excerpts)
+   - Phase 4: Full content (budget permitting)
+4. **Stop** when budget exhausted
+
+## Comparison
+
+<PIPE> Tool <PIPE> Budgeting <PIPE> Signatures <PIPE> Progressive <PIPE>
+<PIPE>------<PIPE>-----------<PIPE>------------<PIPE>-------------<PIPE>
+<PIPE> **dirpack** <PIPE> ✅ tokens/bytes <PIPE> ✅ tree-sitter <PIPE> ✅ 4-phase <PIPE>
+<PIPE> yek <PIPE> ✅ tokens <PIPE> ❌ <PIPE> ❌ <PIPE>
+<PIPE> code2prompt <PIPE> ❌ <PIPE> ❌ <PIPE> ❌ <PIPE>
+<PIPE> repomix <PIPE> ❌ <PIPE> ❌ <PIPE> ❌ <PIPE>
+
+dirpack's unique value: **progressive disclosure with real signatures**, not just file listings.
+
+## CLI Reference
+
+```
+dirpack pack [PATH] [OPTIONS]
+  -t, --target-tokens <N>   Token budget
+  -b, --target-bytes <N>    Byte budget
+  -f, --format <FORMAT>     Output: pipe, full, json
+  -o, --output <FILE>       Write to file instead of stdout
+  -c, --config <FILE>       Custom config path
+  --root-label <LABEL>      Override root path in output (e.g., '.')
+  --no-git                  Don't use git ls-files
+  --no-signatures           Skip tree-sitter extraction
+  -v, --verbose             Show stats
+
+dirpack tree [PATH]
+  --show-priority           Display computed priorities
+
+dirpack init
+  --global                  Create in ~/.config/dirpack/
+  --force                   Overwrite existing
+```
+
+## License
+
+MIT
+
+```|CONTENT:eval/README.md
+```
+# Eval Harness
+
+This folder captures baseline metrics and the agreed thresholds for dirpack's allocation quality.
+
+## Metrics (Tier 1)
+
+- **Budget overshoot**: `(actual_tokens - target)/target` if actual > target, else 0.
+  - **Threshold**: must be **<= 2%** for all evaluated budgets.
+- **Entry point coverage**: fraction of expected entry points found in output.
+  - Expected entry points are inferred per repo from the files that exist:
+    `Cargo.toml`, `pyproject.toml`, `package.json`, `main.rs`, `lib.rs`, `index.ts`, `index.tsx`,
+    `main.py`, `app.py`, `__init__.py`.
+  - **Threshold**: **100%** at budgets **>= 500 tokens**.
+- **Tree ratio**: `tree_tokens / target_tokens` (tree-only segments).
+  - **Threshold**: **<= 40%** of budget.
+- **Elapsed time**: wall clock time for `pack` (ms).
+- **Tokens/sec**: `actual_tokens / elapsed_seconds`.
+
+## Metrics (Tier 2/Informational)
+
+- **Coverage spread**: fraction of top-level dirs that have at least one detailed file.
+- **Lopsidedness**: max detailed-files-per-top-dir divided by mean.
+- **Signature files**: count of files with signatures.
+- **Path diversity**: count of unique path prefixes (depth=2) among detailed files.
+
+## Baseline
+
+`eval/baseline.json` captures a snapshot for:
+- `dirpack` (this repo)
+- `dspy`
+- `build123d`
+
+Budgets: 500, 1000, 2000, 4000 tokens.
+
+Generate a fresh baseline with:
+
+```bash
+cargo run -- eval <path> --budgets 500,1000,2000,4000 --pretty
+```
+
+## Qualitative Review (MANDATORY)
+
+**After quantitative tests PASS**, you MUST run a dogfood check:
+
+```bash
+./target/release/dirpack pack . -b 2000
+```
+
+Review the output and answer these questions:
+
+### Checklist
+
+1. **README.md content visible?**
+   - The main README.md should have content or headings in output
+   - Test fixture READMEs should NOT appear before main README
+
+2. **No duplicate signatures?**
+   - Scan for repeated function/struct names
+   - Each signature should appear exactly once
+
+3. **Priority makes sense?**
+   - Core code (src/) should have more coverage than tests/fixtures/
+   - Entry points (main.rs, lib.rs, mod.rs) should appear early
+   - Documentation (README, DESIGN) should be prioritized over config files
+
+4. **Architecture understandable?**
+   - Could a new developer figure out where to start?
+   - Are the main modules and their relationships clear?
+   - Is there enough context to understand the codebase purpose?
+
+### Failure Criteria
+
+If ANY of these are true, the PR is NOT ready:
+- Main README.md has no content in output
+- Duplicate signatures waste budget
+- Test fixtures prioritized over core code
+- Output is unreadable wall of text with no structure
+
+### Rating
+
+Rate the output 1-10 for "usefulness as codebase onboarding aid".
+Target: **7+** before merge to main.
+
+```|CONTENT:examples/README.md
+```
+# Dirpack Examples
+
+These examples are auto-generated by the [generate-examples](.github/workflows/generate-examples.yml) GitHub Action.
+
+<PIPE> File <PIPE> Budget <PIPE> Format <PIPE>
+<PIPE>------<PIPE>--------<PIPE>--------<PIPE>
+<PIPE> `dirpack-1000tok.txt` <PIPE> 1,000 tokens <PIPE> pipe <PIPE>
+<PIPE> `dirpack-2000tok.txt` <PIPE> 2,000 tokens <PIPE> pipe <PIPE>
+<PIPE> `dirpack-5000tok.txt` <PIPE> 5,000 tokens <PIPE> pipe <PIPE>
+<PIPE> `dirpack-2000tok.json` <PIPE> 2,000 tokens <PIPE> JSON <PIPE>
+
+These are dirpacks of the dirpack repo itself, demonstrating how content is prioritized at different budget levels.
+
+To regenerate locally:
+
+```bash
+cargo build --release
+./target/release/dirpack pack . -t 1000 -o examples/dirpack-1000tok.txt -e "examples/*" -e "target/*"
+```
+
+```|CONTENT:src/lib.rs
+```
+pub mod budget;
+pub mod archive;
+pub mod cli;
+pub mod config;
+pub mod error;
+pub mod eval;
+pub mod format;
+pub mod limits;
+pub mod packer;
+pub mod priority;
+pub mod scanner;
+pub mod security;
+pub mod tokenizer;
+
+pub use crate::config::{Config, OutputFormat};
+pub use crate::error::{DirpackError, Result};
+
+```|CONTENT:tests/fixtures/monorepo/README.md
+```
+# Monorepo Fixture
+
+```|CONTENT:tests/fixtures/root_only/README.md
+```
+# Root Only Fixture
+
+```|CONTENT:tests/fixtures/small_project/README.md
+```
+# Small Project
+
+A test fixture for dirpack eval harness.
+
+## Features
+
+- Simple structure
+- Known file count
+- Predictable signatures
+
+## Usage
+
+This is not a real project. Used for testing budget allocation.
+
+```|CONTENT:src/limits.rs
+```
+//! Safety limits for server usage.
+
+pub const MAX_BUDGET_TOKENS: usize = 8_000;
+pub const MAX_BUDGET_BYTES: usize = 32_000;
+pub const MAX_SCAN_DEPTH: usize = 20;
+
+pub fn clamp_budget_tokens(tokens: usize) -> usize {
+    tokens.min(MAX_BUDGET_TOKENS)
+}
+
+pub fn clamp_budget_bytes(bytes: usize) -> usize {
+    bytes.min(MAX_BUDGET_BYTES)
+}
+
+pub fn clamp_scan_depth(depth: usize) -> usize {
+    if depth == 0 {
+        MAX_SCAN_DEPTH
+    } else {
+        depth.min(MAX_SCAN_DEPTH)
+    }
+}
+
+```|CONTENT:tests/fixtures/root_only/Cargo.toml
+```
+[package]
+name = "root_only"
+
+```|[+201 more files truncated]

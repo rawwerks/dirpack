@@ -35,7 +35,13 @@ pub struct PackArgs {
     pub path: PathBuf,
 
     /// Token budget (mutually exclusive with --target-bytes)
-    #[arg(short = 't', long = "target-tokens", value_name = "N", conflicts_with = "target_bytes")]
+    #[arg(
+        short = 't',
+        long = "target-tokens",
+        alias = "token-budget",
+        value_name = "N",
+        conflicts_with = "target_bytes"
+    )]
     pub target_tokens: Option<usize>,
 
     /// Byte budget (mutually exclusive with --target-tokens)

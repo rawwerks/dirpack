@@ -385,13 +385,13 @@ key:
 key:
 ```|CONTENT:tests/fixtures/config_heavy/config_18.yaml
 ```
-key:
+key: value18
 ```|CONTENT:tests/fixtures/config_heavy/config_19.yaml
 ```
 key:
 ```|CONTENT:tests/fixtures/config_heavy/config_20.yaml
 ```
-key:
+key: value20
 ```|CONTENT:tests/fixtures/config_heavy/app.toml
 ```
 [app]

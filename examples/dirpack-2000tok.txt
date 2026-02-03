@@ -95,6 +95,9 @@ key:
 ```|CONTENT:tests/fixtures/config_heavy/config_02.json
 ```
 {"name":
+```|CONTENT:tests/fixtures/config_heavy/config_03.json
+```
+{"name":
 ```|CONTENT:tests/fixtures/config_heavy/config_04.json
 ```
 {"name":
@@ -102,9 +105,6 @@ key:
 ```
 {"name":
 ```|CONTENT:tests/fixtures/config_heavy/config_06.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_07.json
 ```
 {"name":
 ```|CONTENT:tests/fixtures/config_heavy/config_08.json
@@ -143,10 +143,10 @@ key:
 ```|CONTENT:tests/fixtures/config_heavy/config_19.json
 ```
 {"name":
-```|CONTENT:tests/fixtures/deep/a/b/c/d/e/f/deep.rs
+```|CONTENT:tests/fixtures/config_heavy/config_20.json
 ```
-pub fn deep() {}
-```|CONTENT:tests/fixtures/deep_nesting/a/b/c/d/e/f/g/deep.rs
+{"name":
+```|CONTENT:tests/fixtures/deep/a/b/c/d/e/f/deep.rs
 ```
 pub fn
 ```|CONTENT:tests/fixtures/binary_only/doc.pdf

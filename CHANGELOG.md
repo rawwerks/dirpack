@@ -7,6 +7,12 @@ Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-02-03
+
+### Added
+- Hybrid content budgeting for progressive disclosure (full content for small/high-priority files, then per-file snippets from remaining budget).
+- Configurable content controls: `full_budget_ratio`, `max_full_tokens`, `max_snippet_tokens`, `exclude_patterns`.
+
 ## [0.2.0] - 2026-02-02
 
 ### Added

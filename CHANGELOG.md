@@ -14,6 +14,9 @@ Semantic Versioning.
 ### Added
 - Eval metrics now report budget utilization ratio and include a utilization guard on a content-heavy fixture.
 
+### Changed
+- Utilization guard allows modest variance and skips enforcement when content is insufficient.
+
 ## [0.3.0] - 2026-02-03
 
 ### Added

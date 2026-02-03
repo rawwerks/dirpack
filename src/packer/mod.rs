@@ -480,7 +480,8 @@ fn pack_impl(
             let snippet_limit = remaining.saturating_sub(full_limit);
 
             let mut full_budget = make_budget_like(budget.target, full_limit);
-            let mut snippet_budget = make_budget_like(budget.target, snippet_limit);
+            let mut snippet_budget_limit = snippet_limit;
+            let mut snippet_budget = make_budget_like(budget.target, snippet_budget_limit);
 
             let max_full_units = units_from_tokens(config.content.max_full_tokens, budget.target);
             let max_snippet_units =
@@ -555,6 +556,16 @@ fn pack_impl(
                 }
             }
 
+            // If full-content pool went unused (e.g. files exceed max_full_tokens),
+            // roll the unused budget into the snippet pool.
+            if !full_budget.is_exhausted() {
+                let extra = full_budget.remaining();
+                if extra > 0 {
+                    snippet_budget_limit = snippet_budget_limit.saturating_add(extra);
+                    snippet_budget = make_budget_like(budget.target, snippet_budget_limit);
+                }
+            }
+
             let total_remaining = remaining_candidates.len();
             for (idx, candidate) in remaining_candidates.into_iter().enumerate() {
                 if budget.is_exhausted() || snippet_budget.is_exhausted() {
@@ -571,7 +582,11 @@ fn pack_impl(
                     per_file_limit = 1;
                 }
                 if max_snippet_units > 0 {
-                    per_file_limit = per_file_limit.min(max_snippet_units);
+                    let max_total = max_snippet_units.saturating_mul(files_left);
+                    // Only enforce the per-file cap when the snippet pool is tight.
+                    if snippet_budget.remaining() <= max_total {
+                        per_file_limit = per_file_limit.min(max_snippet_units);
+                    }
                 }
                 let max_units = per_file_limit
                     .min(snippet_budget.remaining())

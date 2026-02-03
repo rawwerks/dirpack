@@ -474,8 +474,8 @@ fn test_spine_budget_truncation() {
         false,
         false,
     );
-    assert!(output.contains("this_is_a_very_long_filename_alpha.rs"));
-    assert!(!output.contains("this_is_a_very_long_filename_gamma.rs"));
+    assert!(output.contains("a:{this_is_a_very_long_filename_alpha.rs"));
+    assert!(!output.contains("c:{this_is_a_very_long_filename_gamma.rs"));
 }
 
 #[test]

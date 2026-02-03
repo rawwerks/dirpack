@@ -7,6 +7,8 @@ Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-02-03
+
 ### Added
 - CLI alias `--token-budget` for `--target-tokens`.
 

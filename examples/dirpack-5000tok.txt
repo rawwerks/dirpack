@@ -86,7 +86,7 @@ pub use crate::error::{DirpackError, Result};
 ```
 [package]
 name = "dirpack"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "Budgeted directory indexes for AI coding agents with tree-sitter signatures"
 license = "MIT"

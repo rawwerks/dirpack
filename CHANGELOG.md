@@ -7,6 +7,8 @@ Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-02-03
+
 ### Fixed
 - Use unused full-content budget for snippets so content fills available budget.
 - Apply per-file snippet cap only when the snippet pool is tight.

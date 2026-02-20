@@ -86,7 +86,7 @@ pub use crate::error::{DirpackError, Result};
 ```
 [package]
 name = "dirpack"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2021"
 description = "Budgeted directory indexes for AI coding agents with tree-sitter signatures"
 license = "MIT"
@@ -232,8 +232,8 @@ This is not a real project. Used for testing budget allocation.
 ```
 //! Safety limits for server usage.
 
-pub const MAX_BUDGET_TOKENS: usize = 8_000;
-pub const MAX_BUDGET_BYTES: usize = 32_000;
+pub const MAX_BUDGET_TOKENS: usize = 200_000;
+pub const MAX_BUDGET_BYTES: usize = 800_000;
 pub const MAX_SCAN_DEPTH: usize = 20;
 
 pub fn clamp_budget_tokens(tokens: usize) -> usize {
@@ -275,9 +275,6 @@ fn main() {
     println!("A");
 }
 
-```|CONTENT:tests/fixtures/flat_1000_files/file_0189.txt
-```
-data
 ```|CONTENT:tests/fixtures/flat_1000_files/file_0190.txt
 ```
 data
@@ -389,13 +386,13 @@ key:
 key:
 ```|CONTENT:tests/fixtures/config_heavy/config_17.yaml
 ```
-key:
+key: value17
 ```|CONTENT:tests/fixtures/config_heavy/config_18.yaml
 ```
 key:
 ```|CONTENT:tests/fixtures/config_heavy/config_19.yaml
 ```
-key:
+key: value19
 ```|CONTENT:tests/fixtures/config_heavy/config_20.yaml
 ```
 key:
@@ -459,12 +456,15 @@ key:
 ```|CONTENT:tests/fixtures/config_heavy/config_19.json
 ```
 {"name":
+```|CONTENT:tests/fixtures/config_heavy/config_20.json
+```
+{"name":
 ```|CONTENT:tests/fixtures/deep/a/b/c/d/e/f/deep.rs
 ```
-pub fn deep() {}
+pub fn deep()
 ```|CONTENT:tests/fixtures/deep_nesting/a/b/c/d/e/f/g/deep.rs
 ```
-pub fn
+pub
 ```|CONTENT:tests/fixtures/binary_only/doc.pdf
 ```
 %PDF-1.4\n%

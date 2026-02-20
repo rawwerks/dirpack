@@ -38,7 +38,7 @@ pub struct PackArgs {
     #[arg(
         short = 't',
         long = "target-tokens",
-        alias = "token-budget",
+        aliases = ["token-budget", "budget"],
         value_name = "N",
         conflicts_with = "target_bytes"
     )]

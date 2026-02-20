@@ -1,7 +1,7 @@
 //! Safety limits for server usage.
 
-pub const MAX_BUDGET_TOKENS: usize = 8_000;
-pub const MAX_BUDGET_BYTES: usize = 32_000;
+pub const MAX_BUDGET_TOKENS: usize = 200_000;
+pub const MAX_BUDGET_BYTES: usize = 800_000;
 pub const MAX_SCAN_DEPTH: usize = 20;
 
 pub fn clamp_budget_tokens(tokens: usize) -> usize {

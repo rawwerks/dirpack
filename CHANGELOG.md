@@ -7,6 +7,14 @@ Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-02-20
+
+### Added
+- CLI alias `--budget` for `--target-tokens`.
+
+### Changed
+- Raised max token budget from 8,000 to 200,000 (and max byte budget from 32KB to 800KB).
+
 ## [0.3.2] - 2026-02-03
 
 ### Added

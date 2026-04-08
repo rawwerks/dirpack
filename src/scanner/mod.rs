@@ -100,11 +100,12 @@ fn filter_hidden_entries(
     output
 }
 
-fn build_exclude_patterns(config: &Config, use_git: bool) -> Vec<String> {
+fn build_exclude_patterns(config: &Config, _use_git: bool) -> Vec<String> {
     let mut patterns = Vec::new();
-    if use_git {
-        patterns.extend(config.exclude.patterns.clone());
-    }
+    // User-configured exclude patterns always apply — regardless of whether
+    // git is used for scanning. Previously these were only included when
+    // use_git was true, which silently dropped exclude rules under --no-git.
+    patterns.extend(config.exclude.patterns.clone());
     patterns.extend(security_exclude_patterns());
     patterns
 }

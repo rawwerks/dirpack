@@ -11,9 +11,13 @@ Semantic Versioning.
 - Pi launch-context extension at `.pi/extensions/dirpack-launch-context.ts` for automatic hidden `dirpack` injection on session start, enabled by default with a 2000-token budget and `/dirpack on|off|budget|status|refresh` controls.
 - `/dirpack create <tokens>` one-shot command for explicit hidden context injection without persisting config changes.
 - Claude Code plugin at `integrations/claude-code/` (marketplace `rawwerks-dirpack`). Injects a fresh token-budgeted dirpack index into every Claude Code session via a `SessionStart` hook, and ships five slash commands: `/dirpack:status`, `/dirpack:on`, `/dirpack:off`, `/dirpack:budget <N>`, and `/dirpack:create <N>` (the last being a one-shot pack of the current working directory that doesn't mutate persisted config). Default budget is 2000 tokens; state persists to `${XDG_CONFIG_HOME:-~/.config}/dirpack/cc-plugin.json`.
+- On-disk pack cache that short-circuits repeated packs when inputs are unchanged. Cache key is a SHA-256 of the dirpack version, canonical root, budget target, config digest, and a sorted manifest of every scanned file's `(path, size, mtime)`. Opt out with `--no-cache`, `DIRPACK_NO_CACHE=1`, or `[cache] enabled = false` in dirpack.toml.
+- `max_file_size_bytes` scanning config (default: 2 MiB). Files larger than this limit still appear in the directory spine but are skipped for signature extraction and content reads, preventing multi-second stalls on repos with large binary/data files.
+- CLI `--exclude` patterns are now merged into config exclude patterns and applied in all scan modes (previously `--exclude` was parsed but not wired into `run_pack`).
 
 ### Fixed
 - Submodule-like edge-case tests now stage their nested `.git` file in a temp copy of the fixture so colocated `jj` repos do not report phantom deletions under `tests/fixtures/submodule_like/`.
+- User-configured `[exclude] patterns` now apply in `--no-git` mode. Previously they were silently dropped when `use_git` was false, which meant `--no-git` packs could scan directories that should have been excluded (e.g., `target/`, `node_modules/`).
 
 ## [0.3.3] - 2026-02-20
 

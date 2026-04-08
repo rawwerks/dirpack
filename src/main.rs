@@ -5,9 +5,11 @@ use std::time::Instant;
 use clap::Parser;
 
 use dirpack::budget::BudgetTarget;
+use dirpack::cache::{self, CacheOptions};
 use dirpack::cli::{Cli, Commands, PackArgs};
 use dirpack::config::{apply_security_overrides, clamp_budget_target, Config, OutputFormat};
 use dirpack::packer;
+use dirpack::scanner;
 use dirpack::tokenizer;
 
 fn main() -> anyhow::Result<()> {
@@ -46,6 +48,11 @@ fn run_pack(args: PackArgs) -> anyhow::Result<()> {
     };
     apply_security_overrides(&mut config);
 
+    // Merge CLI --exclude patterns into config
+    if !args.exclude.is_empty() {
+        config.exclude.patterns.extend(args.exclude.iter().cloned());
+    }
+
     // Determine budget target
     let budget_target = if let Some(tokens) = args.target_tokens {
         BudgetTarget::Tokens(tokens)
@@ -59,19 +66,52 @@ fn run_pack(args: PackArgs) -> anyhow::Result<()> {
     // Determine output format
     let format = args.format.unwrap_or(config.output.format);
 
-    // Run packer
+    // Run packer (with cache)
     let use_git = !args.no_git;
     let include_signatures = !args.no_signatures;
+    let cache_opts = CacheOptions::resolve(&config, args.no_cache);
 
     let start = Instant::now();
-    let result = packer::pack(
-        &root,
-        &config,
-        budget_target,
-        use_git,
-        include_signatures,
-        args.root_label.as_deref(),
-    );
+
+    // Scan first so we can compute the cache key from the file manifest.
+    let entries = scanner::scan(&root, &config, use_git);
+
+    let result = if cache_opts.enabled {
+        let key = cache::compute_key(
+            &root,
+            &entries,
+            &config,
+            budget_target,
+            format,
+            use_git,
+            include_signatures,
+            args.root_label.as_deref(),
+        );
+        if let Some(cached) = cache::read(&key) {
+            cached.into_pack_result()
+        } else {
+            let result = packer::pack(
+                &root,
+                &config,
+                budget_target,
+                use_git,
+                include_signatures,
+                args.root_label.as_deref(),
+            );
+            cache::write(&key, &result);
+            result
+        }
+    } else {
+        packer::pack(
+            &root,
+            &config,
+            budget_target,
+            use_git,
+            include_signatures,
+            args.root_label.as_deref(),
+        )
+    };
+
     let elapsed = start.elapsed();
 
     // Output

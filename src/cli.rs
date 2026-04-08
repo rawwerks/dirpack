@@ -84,6 +84,10 @@ pub struct PackArgs {
     #[arg(long = "no-signatures")]
     pub no_signatures: bool,
 
+    /// Disable the on-disk pack cache for this invocation
+    #[arg(long = "no-cache")]
+    pub no_cache: bool,
+
     /// Title for the index [default: directory name]
     #[arg(long = "title", value_name = "TITLE")]
     pub title: Option<String>,
@@ -116,6 +120,7 @@ impl Default for PackArgs {
             include: Vec::new(),
             no_git: false,
             no_signatures: false,
+            no_cache: false,
             title: None,
             verbose: false,
             timing: false,

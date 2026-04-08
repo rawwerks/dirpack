@@ -38,6 +38,14 @@ use signatures::SignatureExtractor;
 
 // Tree budget ratio (30% to account for header overhead and ensure ≤40% in output)
 const TREE_BUDGET_RATIO: f64 = 0.30;
+
+/// Check whether a file should be read for content or signatures, based on
+/// the configured `max_file_size_bytes`. Files above this threshold still
+/// appear in the directory spine but are too large to parse cheaply.
+fn file_too_large(entry: &scanner::entry::FileEntry, config: &Config) -> bool {
+    let limit = config.scanning.max_file_size_bytes;
+    limit > 0 && entry.size > limit
+}
 const PACK_CONCURRENCY_ENV: &str = "DIRPACK_PACK_CONCURRENCY_LIMIT";
 const PACK_RETRY_AFTER_ENV: &str = "DIRPACK_PACK_RETRY_AFTER_SECS";
 const DEFAULT_RETRY_AFTER_SECS: u64 = 1;
@@ -265,6 +273,9 @@ fn pack_impl(
     for file in &files_by_priority {
         let name = file.file_name().to_uppercase();
         if name.starts_with("README") {
+            if file_too_large(file, config) {
+                break;
+            }
             if let Some(content) = content::read_entry_content(file) {
                 let summary = content::extract_summary(&content, 3);
                 let first_line = summary.lines().next().unwrap_or("").trim();
@@ -390,6 +401,9 @@ fn pack_impl(
                                 if !extractor.supports_extension(&file.extension) {
                                     continue;
                                 }
+                                if file_too_large(&file, config) {
+                                    continue;
+                                }
 
                                 let sigs = match extractor.extract_from_file(&file.path) {
                                     Ok(sigs) => sigs,
@@ -496,7 +510,7 @@ fn pack_impl(
 
             let mut candidates: Vec<ContentCandidate> = Vec::new();
             for file in &files_by_priority {
-                if should_skip_content(file, config) {
+                if should_skip_content(file, config) || file_too_large(file, config) {
                     continue;
                 }
                 let Some(content_text) = content::read_entry_content(file) else {

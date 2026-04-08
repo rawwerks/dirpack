@@ -16,25 +16,33 @@ max_file_size_bytes = 2097152  # 2 MiB. Files above this appear in spine
                                # Set to 0 to disable the limit.
 
 # File categories - used for prioritization and signature extraction
+# content_weight scales priority during the content phase (phase 4) only.
+# 1.0 = full weight, 0.0 = never include content. Spine and signatures
+# are unaffected.
 [categories.code]
 extensions = ["rs", "go", "py", "ts", "tsx", "js", "jsx", "c", "cpp", "h", "hpp", "java", "rb", "ex", "exs"]
 priority = 100
+content_weight = 1.0
 
 [categories.docs]
 extensions = ["md", "mdx", "txt", "rst", "adoc"]
 priority = 90
+content_weight = 1.0
 
 [categories.config]
 extensions = ["toml", "yaml", "yml", "json", "ini", "cfg"]
 priority = 80
+content_weight = 0.2     # configs appear in spine but rarely need content
 
 [categories.build]
 extensions = ["lock", "sum"]
 priority = 20
+content_weight = 0.0     # never include lock file content
 
 [categories.data]
 extensions = ["csv", "sql"]
 priority = 30
+content_weight = 0.0     # never include raw data content
 
 # Priority rules - higher = more important, included first in budget
 [[priority_rules]]

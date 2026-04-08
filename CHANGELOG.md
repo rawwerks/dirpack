@@ -14,6 +14,10 @@ Semantic Versioning.
 - On-disk pack cache that short-circuits repeated packs when inputs are unchanged. Cache key is a SHA-256 of the dirpack version, canonical root, budget target, config digest, and a sorted manifest of every scanned file's `(path, size, mtime)`. Opt out with `--no-cache`, `DIRPACK_NO_CACHE=1`, or `[cache] enabled = false` in dirpack.toml.
 - `max_file_size_bytes` scanning config (default: 2 MiB). Files larger than this limit still appear in the directory spine but are skipped for signature extraction and content reads, preventing multi-second stalls on repos with large binary/data files.
 - CLI `--exclude` patterns are now merged into config exclude patterns and applied in all scan modes (previously `--exclude` was parsed but not wired into `run_pack`).
+- `content_weight` per file category controls how aggressively each category's files are included in the content phase. Defaults: code/docs 1.0, config 0.2, build/data 0.0. Configurable in dirpack.toml via `[categories.<name>].content_weight`.
+
+### Changed
+- Content phase skips files under 50 bytes (fully represented by spine) and snippets truncated to fewer than 3 lines (eliminates single-import/shebang junk). Among equal-priority files, larger files now sort first for content inclusion instead of smaller ones.
 
 ### Fixed
 - Submodule-like edge-case tests now stage their nested `.git` file in a temp copy of the fixture so colocated `jj` repos do not report phantom deletions under `tests/fixtures/submodule_like/`.

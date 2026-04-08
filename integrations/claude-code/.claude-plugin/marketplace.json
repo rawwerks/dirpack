@@ -1,0 +1,28 @@
+{
+  "name": "rawwerks-dirpack",
+  "metadata": {
+    "description": "rawwerks marketplace for the dirpack Claude Code plugin — budgeted directory indexes injected at session start.",
+    "version": "0.1.0"
+  },
+  "owner": {
+    "name": "rawwerks",
+    "url": "https://github.com/rawwerks"
+  },
+  "plugins": [
+    {
+      "name": "dirpack",
+      "source": "./",
+      "description": "Fresh, token-budgeted dirpack index of the current repo injected at every Claude Code session start. Configurable via /dirpack slash command (on, off, budget, status).",
+      "version": "0.1.0",
+      "category": "context",
+      "keywords": [
+        "dirpack",
+        "context-injection",
+        "session-start",
+        "token-budget"
+      ],
+      "homepage": "https://github.com/rawwerks/dirpack",
+      "license": "MIT"
+    }
+  ]
+}

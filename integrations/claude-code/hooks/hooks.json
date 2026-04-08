@@ -1,0 +1,17 @@
+{
+  "description": "dirpack plugin — inject a fresh token-budgeted directory index at session start",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/dirpack-session-start.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

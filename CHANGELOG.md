@@ -7,6 +7,13 @@ Semantic Versioning.
 
 ## [Unreleased]
 
+### Added
+- Pi launch-context extension at `.pi/extensions/dirpack-launch-context.ts` for automatic hidden `dirpack` injection on session start, enabled by default with a 2000-token budget and `/dirpack on|off|budget|status|refresh` controls.
+- `/dirpack create <tokens>` one-shot command for explicit hidden context injection without persisting config changes.
+
+### Fixed
+- Submodule-like edge-case tests now stage their nested `.git` file in a temp copy of the fixture so colocated `jj` repos do not report phantom deletions under `tests/fixtures/submodule_like/`.
+
 ## [0.3.3] - 2026-02-20
 
 ### Added

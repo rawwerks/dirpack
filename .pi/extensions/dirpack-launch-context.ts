@@ -302,6 +302,7 @@ function parseCommand(args: string):
 	| { type: "off" }
 	| { type: "refresh" }
 	| { type: "budget"; budgetTokens: number }
+	| { type: "create"; budgetTokens: number }
 	| { type: "error"; message: string } {
 	const trimmed = args.trim();
 	if (!trimmed || trimmed === "status") {
@@ -317,6 +318,14 @@ function parseCommand(args: string):
 		return { type: "refresh" };
 	}
 
+	// /dirpack create <N> — one-shot pack of the current cwd at the given
+	// token budget. Does NOT mutate persisted config and fires even when
+	// automatic injection is disabled.
+	const createMatch = trimmed.match(/^create(?:\s+|=)(\d+)$/);
+	if (createMatch) {
+		return { type: "create", budgetTokens: normalizeBudget(Number(createMatch[1])) };
+	}
+
 	const budgetMatch = trimmed.match(/^budget(?:\s+|=)(\d+)$/);
 	if (budgetMatch) {
 		return { type: "budget", budgetTokens: normalizeBudget(Number(budgetMatch[1])) };
@@ -324,12 +333,23 @@ function parseCommand(args: string):
 
 	return {
 		type: "error",
-		message: `Usage: /${COMMAND_NAME} [status|on|off|refresh|budget <tokens>]`,
+		message: `Usage: /${COMMAND_NAME} [status|on|off|refresh|create <tokens>|budget <tokens>]`,
 	};
 }
 
 function getArgumentCompletions(prefix: string) {
-	const options = ["status", "on", "off", "refresh", "budget 1000", "budget 2000", "budget 4000"];
+	const options = [
+		"status",
+		"on",
+		"off",
+		"refresh",
+		"create 1000",
+		"create 2000",
+		"create 4000",
+		"budget 1000",
+		"budget 2000",
+		"budget 4000",
+	];
 	const trimmed = prefix.trimStart();
 	const filtered = options.filter((option) => option.startsWith(trimmed));
 	return filtered.length > 0 ? filtered.map((value) => ({ value, label: value })) : null;
@@ -342,14 +362,25 @@ export default function dirpackLaunchContextExtension(pi: ExtensionAPI) {
 	};
 	let lastPack: LastPack | undefined;
 
-	async function injectFreshDirpack(ctx: ExtensionContext, source: string): Promise<boolean> {
-		if (!config.enabled) {
+	async function injectFreshDirpack(
+		ctx: ExtensionContext,
+		source: string,
+		budgetOverride?: number,
+	): Promise<boolean> {
+		// When called with a budgetOverride (e.g. /dirpack create 3000) we
+		// bypass the enabled flag so the user can always produce a one-shot
+		// pack. Automatic injection (session_start, /dirpack on, etc.) still
+		// honours the enabled flag.
+		const isOneShot = budgetOverride !== undefined;
+		const budget = budgetOverride ?? config.budgetTokens;
+
+		if (!isOneShot && !config.enabled) {
 			setStatus(ctx, config, lastPack, false);
 			return false;
 		}
 
 		setStatus(ctx, config, lastPack, true);
-		const outcome = await generateDirpack(ctx.cwd, config.budgetTokens);
+		const outcome = await generateDirpack(ctx.cwd, budget);
 		if (outcome.kind !== "ok") {
 			lastPack = undefined;
 			setStatus(ctx, config, lastPack, false);
@@ -360,11 +391,11 @@ export default function dirpackLaunchContextExtension(pi: ExtensionAPI) {
 		}
 
 		const generatedAt = new Date().toISOString();
-		const content = formatContextMessage(config.budgetTokens, source, outcome.output);
+		const content = formatContextMessage(budget, source, outcome.output);
 		const sha256 = hashText(content);
 		lastPack = {
 			source,
-			budgetTokens: config.budgetTokens,
+			budgetTokens: budget,
 			generatedAt,
 			sha256,
 			commandLine: outcome.commandLine,
@@ -375,7 +406,7 @@ export default function dirpackLaunchContextExtension(pi: ExtensionAPI) {
 		const details = {
 			source,
 			cwd: ctx.cwd,
-			budgetTokens: config.budgetTokens,
+			budgetTokens: budget,
 			format: OUTPUT_FORMAT,
 			rootLabel: ".",
 			generatedAt,
@@ -456,6 +487,23 @@ export default function dirpackLaunchContextExtension(pi: ExtensionAPI) {
 				ctx.ui.notify(
 					injected ? "dirpack launch context enabled and refreshed" : "dirpack launch context enabled",
 					"info",
+				);
+				return;
+			}
+
+			if (action.type === "create") {
+				// One-shot pack of cwd at the user-supplied budget. Config is
+				// untouched; the enabled flag is bypassed.
+				const injected = await injectFreshDirpack(
+					ctx,
+					`command:create:${action.budgetTokens}`,
+					action.budgetTokens,
+				);
+				ctx.ui.notify(
+					injected
+						? `dirpack create: injected ${action.budgetTokens} token pack of ${ctx.cwd}`
+						: `dirpack create: failed to pack ${ctx.cwd} at ${action.budgetTokens} tokens`,
+					injected ? "info" : "warning",
 				);
 				return;
 			}

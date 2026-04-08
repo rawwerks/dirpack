@@ -104,6 +104,39 @@ Run `dirpack init` to generate a full default config.
 - `DIRPACK_PACK_CONCURRENCY_LIMIT`: max concurrent pack jobs (default: available CPU parallelism)
 - `DIRPACK_PACK_RETRY_AFTER_SECS`: suggested retry delay for saturated servers (default: 1)
 
+## Pi Extension: Launch Context
+
+This repo now ships a pi extension at `.pi/extensions/dirpack-launch-context.ts`.
+
+It is designed to be symlinked into `~/.pi/agent/extensions/` so pi can auto-load it globally:
+
+```bash
+ln -sfn /path/to/dirpack/.pi/extensions/dirpack-launch-context.ts \
+  ~/.pi/agent/extensions/dirpack-launch-context.ts
+```
+
+Behavior:
+
+- enabled by default
+- default budget is `2000` tokens
+- on pi session start, it generates a fresh `dirpack pack . -t <budget> -f pipe --root-label .`
+- injects that pack as a hidden custom message in the pi session log/context
+
+Slash commands:
+
+- `/dirpack on`
+- `/dirpack off`
+- `/dirpack budget 4000`
+- `/dirpack status`
+- `/dirpack refresh`
+
+Binary resolution order:
+
+1. `PI_DIRPACK_LAUNCH_CONTEXT_COMMAND`
+2. `target/debug/dirpack` from this repo
+3. `target/release/dirpack` from this repo
+4. `dirpack` on `PATH`
+
 ## How It Works
 
 1. **Scan** directory (git-aware or walkdir fallback)

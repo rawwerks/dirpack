@@ -7,6 +7,9 @@ Semantic Versioning.
 
 ## [Unreleased]
 
+### Added
+- Claude Code plugin at `integrations/claude-code/` (marketplace `rawwerks-dirpack`). Injects a fresh token-budgeted dirpack index into every Claude Code session via a `SessionStart` hook, and ships five slash commands: `/dirpack:status`, `/dirpack:on`, `/dirpack:off`, `/dirpack:budget <N>`, and `/dirpack:create <N>` (the last being a one-shot pack of the current working directory that doesn't mutate persisted config). Default budget is 2000 tokens; state persists to `${XDG_CONFIG_HOME:-~/.config}/dirpack/cc-plugin.json`.
+
 ## [0.3.3] - 2026-02-20
 
 ### Added

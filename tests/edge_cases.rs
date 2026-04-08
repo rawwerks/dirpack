@@ -25,6 +25,16 @@ fn ensure_submodule_git_file(root: &Path) {
     );
 }
 
+fn submodule_like_temp_fixture() -> TempDir {
+    let temp = TempDir::new().expect("tempdir");
+    let src = fixture_path("submodule_like");
+    copy_dir_recursive(&src, temp.path()).expect("copy fixture");
+    // Keep the nested .git file out of the repo fixture itself. Writing it in-place can
+    // confuse jj into treating tracked files under the fixture as deleted.
+    ensure_submodule_git_file(temp.path());
+    temp
+}
+
 fn pack_output(root: &Path, budget: BudgetTarget, mut config: Config, use_git: bool, include_signatures: bool) -> String {
     // Keep defaults but allow caller tweaks.
     if config.scanning.max_depth == 0 {
@@ -656,10 +666,9 @@ fn test_spine_budget_fixture() {
 
 #[test]
 fn test_submodule_like_fixture() {
-    let root = fixture_path("submodule_like");
-    ensure_submodule_git_file(&root);
+    let temp = submodule_like_temp_fixture();
     let output = pack_output(
-        &root,
+        temp.path(),
         BudgetTarget::Tokens(800),
         Config::default(),
         false,
@@ -670,10 +679,9 @@ fn test_submodule_like_fixture() {
 
 #[test]
 fn test_submodule_like_ignores_git_dir() {
-    let root = fixture_path("submodule_like");
-    ensure_submodule_git_file(&root);
+    let temp = submodule_like_temp_fixture();
     let output = pack_output(
-        &root,
+        temp.path(),
         BudgetTarget::Tokens(800),
         Config::default(),
         true,

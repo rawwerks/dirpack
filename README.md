@@ -127,8 +127,13 @@ Slash commands:
 - `/dirpack on`
 - `/dirpack off`
 - `/dirpack budget 4000`
+- `/dirpack create 1500`
 - `/dirpack status`
 - `/dirpack refresh`
+
+`/dirpack create <tokens>` is a one-shot injection for the current cwd. It bypasses the
+current on/off setting, does not persist config changes, and records the usual hidden
+`dirpack-launch-event` + `dirpack-launch-context` entries in the session log.
 
 Binary resolution order:
 

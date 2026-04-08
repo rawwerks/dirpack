@@ -11,6 +11,9 @@ include_hidden = false    # Include .dotfiles/dirs
 max_depth = 20            # Max recursion depth
 follow_symlinks = false
 no_git_safety = true      # Apply safety exclusions in --no-git mode
+max_file_size_bytes = 2097152  # 2 MiB. Files above this appear in spine
+                               # but are skipped for signature/content reads.
+                               # Set to 0 to disable the limit.
 
 # File categories - used for prioritization and signature extraction
 [categories.code]
@@ -132,3 +135,9 @@ full_budget_ratio = 0.6
 max_full_tokens = 500
 max_snippet_tokens = 200
 exclude_patterns = ["*.lock", "*.min.js", "*.min.css"]
+
+# On-disk pack cache
+[cache]
+enabled = true            # Disable with --no-cache, DIRPACK_NO_CACHE=1,
+                          # or set to false here. Cache lives under
+                          # ${XDG_CACHE_HOME:-~/.cache}/dirpack/packs/

@@ -1,5 +1,6 @@
 pub mod budget;
 pub mod archive;
+pub mod cache;
 pub mod cli;
 pub mod config;
 pub mod error;

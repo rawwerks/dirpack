@@ -7,6 +7,14 @@ Semantic Versioning.
 
 ## [Unreleased]
 
+### Added
+- On-disk pack cache that short-circuits repeated packs when inputs are unchanged. Cache key is a SHA-256 of the dirpack version, canonical root, budget target, config digest, and a sorted manifest of every scanned file's `(path, size, mtime)`. Opt out with `--no-cache`, `DIRPACK_NO_CACHE=1`, or `[cache] enabled = false` in dirpack.toml.
+- `max_file_size_bytes` scanning config (default: 2 MiB). Files larger than this limit still appear in the directory spine but are skipped for signature extraction and content reads, preventing multi-second stalls on repos with large binary/data files.
+- CLI `--exclude` patterns are now merged into config exclude patterns and applied in all scan modes (previously `--exclude` was parsed but not wired into `run_pack`).
+
+### Fixed
+- User-configured `[exclude] patterns` now apply in `--no-git` mode. Previously they were silently dropped when `use_git` was false, which meant `--no-git` packs could scan directories that should have been excluded (e.g., `target/`, `node_modules/`).
+
 ## [0.3.3] - 2026-02-20
 
 ### Added

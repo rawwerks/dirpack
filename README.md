@@ -97,6 +97,42 @@ priority = 140
 
 Run `dirpack init` to generate a full default config.
 
+## Pack Cache
+
+By default, `dirpack pack` caches its output on disk. If nothing has changed
+(same budget, config, dirpack version, and no files modified) the cache returns
+the previous result in milliseconds instead of re-scanning and re-packing.
+
+Cache entries live under `${XDG_CACHE_HOME:-~/.cache}/dirpack/packs/`. Invalidation
+is implicit: any change to a file's mtime/size, the config, the dirpack version,
+or the budget/format produces a new cache key.
+
+```bash
+# Disable cache for one run
+dirpack pack . -t 2000 --no-cache
+
+# Or via environment variable
+DIRPACK_NO_CACHE=1 dirpack pack . -t 2000
+
+# Or disable permanently in dirpack.toml
+# [cache]
+# enabled = false
+```
+
+To clear the cache: `rm ~/.cache/dirpack/packs/*.json`
+
+## Large File Handling
+
+Files larger than `max_file_size_bytes` (default: 2 MiB) still appear in the
+directory spine but are skipped for signature extraction and content inclusion.
+This prevents multi-second stalls on repos containing large binary or data files.
+
+```toml
+[scanning]
+max_file_size_bytes = 2097152  # 2 MiB (default)
+# max_file_size_bytes = 0      # disable limit (read everything)
+```
+
 ## Runtime Limits
 
 `dirpack` enforces a per-process concurrency cap for pack jobs to protect CPU/IO.
@@ -138,6 +174,7 @@ dirpack pack [PATH] [OPTIONS]
   --root-label <LABEL>      Override root path in output (e.g., '.')
   --no-git                  Don't use git ls-files
   --no-signatures           Skip tree-sitter extraction
+  --no-cache                Disable the on-disk pack cache for this run
   -v, --verbose             Show stats
 
 dirpack tree [PATH]

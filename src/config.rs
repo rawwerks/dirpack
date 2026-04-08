@@ -8,7 +8,7 @@ use crate::budget::BudgetTarget;
 use crate::error::Result;
 use crate::limits;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Config {
     pub output: OutputConfig,
@@ -19,6 +19,7 @@ pub struct Config {
     pub exclude: ExcludeConfig,
     pub signatures: SignatureConfig,
     pub content: ContentConfig,
+    pub cache: CacheConfig,
 }
 
 pub use crate::limits::{
@@ -93,6 +94,7 @@ impl Default for Config {
             exclude: ExcludeConfig::default(),
             signatures: SignatureConfig::default(),
             content: ContentConfig::default(),
+            cache: CacheConfig::default(),
         }
     }
 }
@@ -111,7 +113,7 @@ impl Default for OutputFormat {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default)]
 pub struct OutputConfig {
     pub format: OutputFormat,
@@ -129,7 +131,7 @@ impl Default for OutputConfig {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default)]
 pub struct ScanningConfig {
     pub use_gitignore: bool,
@@ -137,6 +139,11 @@ pub struct ScanningConfig {
     pub max_depth: usize,
     pub follow_symlinks: bool,
     pub no_git_safety: bool,
+    /// Maximum file size (bytes) that will be read for signature extraction
+    /// or content inclusion. Files larger than this still appear in the
+    /// directory spine but do not contribute signatures or content body.
+    /// Set to 0 to disable the limit. Default: 2 MiB.
+    pub max_file_size_bytes: u64,
 }
 
 impl Default for ScanningConfig {
@@ -147,11 +154,39 @@ impl Default for ScanningConfig {
             max_depth: 20,
             follow_symlinks: false,
             no_git_safety: true,
+            max_file_size_bytes: 2 * 1024 * 1024,
         }
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+/// Controls for the on-disk pack cache.
+///
+/// When enabled (default), `dirpack pack` computes a stable cache key from
+/// the dirpack version, canonical root, budget target, output format,
+/// feature flags, a digest of the active `Config`, and a sorted manifest
+/// of every scanned file's `(relative_path, size, mtime_secs)`. If a
+/// matching entry exists under the user cache directory, it is returned
+/// verbatim and the signature / content / tokenization passes are skipped.
+///
+/// Invalidation is implicit: any change to a file's mtime or size, the
+/// config, the dirpack version, or the budget / format produces a new
+/// cache key.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
+pub struct CacheConfig {
+    /// Whether the on-disk pack cache is enabled. Can also be overridden
+    /// per-run by the `--no-cache` flag or the `DIRPACK_NO_CACHE=1`
+    /// environment variable.
+    pub enabled: bool,
+}
+
+impl Default for CacheConfig {
+    fn default() -> Self {
+        Self { enabled: true }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default)]
 pub struct CategoryConfig {
     pub code: Category,
@@ -179,7 +214,7 @@ impl Default for CategoryConfig {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Category {
     pub extensions: Vec<String>,
     pub priority: i32,
@@ -194,7 +229,7 @@ impl Category {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PriorityRule {
     pub pattern: String,
     pub priority: i32,
@@ -202,7 +237,7 @@ pub struct PriorityRule {
 
 /// Configurable priority weight adjustments.
 /// These modify the base priority score for files based on their characteristics.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default)]
 pub struct PriorityWeights {
     /// Default priority for files that don't match any rule (default: 50)
@@ -238,7 +273,7 @@ impl Default for PriorityWeights {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default)]
 pub struct ExcludeConfig {
     pub patterns: Vec<String>,
@@ -266,7 +301,7 @@ impl Default for ExcludeConfig {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default)]
 pub struct SignatureConfig {
     pub enabled: bool,
@@ -306,7 +341,7 @@ impl Default for SignatureConfig {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default)]
 pub struct ContentConfig {
     pub enabled: bool,

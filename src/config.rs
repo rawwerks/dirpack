@@ -207,9 +207,12 @@ impl Default for CategoryConfig {
                 100,
             ),
             docs: Category::new(&["md", "mdx", "txt", "rst", "adoc"], 90),
-            config: Category::new(&["toml", "yaml", "yml", "json", "ini", "cfg"], 80),
-            build: Category::new(&["lock", "sum"], 20),
-            data: Category::new(&["csv", "sql"], 30),
+            config: Category::new(&["toml", "yaml", "yml", "json", "ini", "cfg"], 80)
+                .with_content_weight(0.2),
+            build: Category::new(&["lock", "sum"], 20)
+                .with_content_weight(0.0),
+            data: Category::new(&["csv", "sql"], 30)
+                .with_content_weight(0.0),
         }
     }
 }
@@ -218,6 +221,17 @@ impl Default for CategoryConfig {
 pub struct Category {
     pub extensions: Vec<String>,
     pub priority: i32,
+    /// Weight applied to this category's priority during the content
+    /// inclusion phase (phase 4). 1.0 = full weight, 0.0 = never include
+    /// content. Files still appear in the spine and get signatures
+    /// regardless of this value — it only affects whether their raw
+    /// content body eats budget.
+    #[serde(default = "default_content_weight")]
+    pub content_weight: f64,
+}
+
+fn default_content_weight() -> f64 {
+    1.0
 }
 
 impl Category {
@@ -225,7 +239,13 @@ impl Category {
         Self {
             extensions: extensions.iter().map(|ext| ext.to_string()).collect(),
             priority,
+            content_weight: 1.0,
         }
+    }
+
+    fn with_content_weight(mut self, weight: f64) -> Self {
+        self.content_weight = weight;
+        self
     }
 }
 

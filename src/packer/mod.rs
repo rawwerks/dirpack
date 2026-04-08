@@ -508,9 +508,19 @@ fn pack_impl(
                 priority: i32,
             }
 
+            // Minimum content size: files smaller than this are fully
+            // represented by their name in the spine and add no value as
+            // content inclusions. This prevents tiny stub files (empty
+            // __init__.py, one-line barrel re-exports, single-import test
+            // files) from crowding out substantive code.
+            const MIN_CONTENT_BYTES: u64 = 50;
+
             let mut candidates: Vec<ContentCandidate> = Vec::new();
             for file in &files_by_priority {
                 if should_skip_content(file, config) || file_too_large(file, config) {
+                    continue;
+                }
+                if file.size > 0 && file.size < MIN_CONTENT_BYTES {
                     continue;
                 }
                 let Some(content_text) = content::read_entry_content(file) else {
@@ -520,12 +530,14 @@ fn pack_impl(
                 let safe_content = sanitize_content_for_pipe(&content_text);
                 let segment = format!("CONTENT:{}\n```\n{}\n```", rel_path, safe_content);
                 let cost = content_cost_units(&segment, budget.target);
-                let priority_score = priority::calculate_priority(
+                let base_priority = priority::calculate_priority(
                     file,
                     &config.priority_rules,
                     &config.categories,
                     &config.priority,
                 );
+                let cw = priority::content_weight(&file.extension, &config.categories);
+                let priority_score = (base_priority as f64 * cw) as i32;
                 candidates.push(ContentCandidate {
                     rel_path,
                     safe_content,
@@ -534,10 +546,15 @@ fn pack_impl(
                 });
             }
 
+            // Sort by priority descending. Among equal-priority files,
+            // prefer LARGER files (more informative) over tiny stubs.
+            // This reverses the previous tiebreaker that favored cheap
+            // (small) files, which caused empty inits and barrel re-exports
+            // to crowd out substantive source files.
             candidates.sort_by(|a, b| {
                 b.priority
                     .cmp(&a.priority)
-                    .then_with(|| a.cost.cmp(&b.cost))
+                    .then_with(|| b.cost.cmp(&a.cost))
             });
 
             let mut remaining_candidates: Vec<ContentCandidate> = Vec::new();
@@ -990,9 +1007,20 @@ fn build_snippet_segment(
         return None;
     }
 
-    let (truncated, _) = truncate_content_to_budget(safe_content, target, content_budget);
+    let (truncated, was_truncated) = truncate_content_to_budget(safe_content, target, content_budget);
     if truncated.is_empty() {
         return None;
+    }
+
+    // If the snippet was truncated to fewer than 3 lines, it's almost
+    // certainly a single import/shebang/package declaration that conveys
+    // nothing beyond what the spine already shows. Skip it rather than
+    // waste tokens on "#!/usr/bin/env bash" or "import Foundation".
+    if was_truncated {
+        let line_count = truncated.lines().count();
+        if line_count < 3 {
+            return None;
+        }
     }
 
     Some(format!("{}{}{}", header, truncated, footer))

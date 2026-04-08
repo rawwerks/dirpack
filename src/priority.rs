@@ -82,6 +82,18 @@ fn matches_simple(text: &str, pattern: &str) -> bool {
     false
 }
 
+/// Look up the content_weight for a file's extension. Returns 1.0 for
+/// extensions that don't match any category (unknown files get full weight).
+pub fn content_weight(extension: &str, categories: &CategoryConfig) -> f64 {
+    let ext_lower = extension.to_lowercase();
+    for cat in [&categories.code, &categories.docs, &categories.config, &categories.build, &categories.data] {
+        if cat.extensions.iter().any(|e| e == &ext_lower) {
+            return cat.content_weight;
+        }
+    }
+    1.0
+}
+
 /// Get priority from category config based on extension.
 fn category_priority(extension: &str, categories: &CategoryConfig) -> Option<i32> {
     let ext_lower = extension.to_lowercase();

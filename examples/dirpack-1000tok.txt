@@ -18,14 +18,6 @@ pub mod tokenizer;
 pub use crate::config::{Config, OutputFormat};
 pub use crate::error::{DirpackError, Result};
 
-```|CONTENT:tests/fixtures/monorepo/README.md
-```
-# Monorepo Fixture
-
-```|CONTENT:tests/fixtures/root_only/README.md
-```
-# Root Only Fixture
-
 ```|CONTENT:tests/fixtures/small_project/README.md
 ```
 # Small Project
@@ -42,66 +34,63 @@ A test fixture for dirpack eval harness.
 
 This is not a real project. Used for testing budget allocation.
 
-```|CONTENT:src/limits.rs
+```|CONTENT:src/error.rs
 ```
-//! Safety limits for server usage.
+use std::result;
 
-pub const MAX_BUDGET_TOKENS: usize = 200_000;
-pub const MAX_BUDGET_BYTES: usize = 800_000;
-pub const MAX_SCAN_DEPTH: usize = 20;
-
-pub fn clamp_budget_tokens(tokens: usize) -> usize {
-    tokens.min(MAX_BUDGET_TOKENS)
+#[derive(Debug, thiserror::Error)]
+pub enum DirpackError {
+    #[error("I/O error: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("TOML parse error: {0}")]
+    Toml(#[from] toml::de::Error),
+    #[error("pack capacity reached; retry after {retry_after_secs}s")]
+    PackBusy { retry_after_secs: u64 },
 }
 
-pub fn clamp_budget_bytes(bytes: usize) -> usize {
-    bytes.min(MAX_BUDGET_BYTES)
-}
+pub type Result<T> = result::Result<T, DirpackError>;
 
-pub fn clamp_scan_depth(depth: usize) -> usize {
-    if depth == 0 {
-        MAX_SCAN_DEPTH
-    } else {
-        depth.min(MAX_SCAN_DEPTH)
+impl DirpackError {
+    pub fn retry_after_secs(&self) -> Option<u64> {
+        match self {
+            DirpackError::PackBusy { retry_after_secs } => Some(*retry_after_secs),
+            _ => None,
+        }
     }
 }
 
-```|CONTENT:tests/fixtures/config_heavy/config_14.json
+```|CONTENT:baselines/dspy-tree-ratio-fix.json
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_15.json
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+... [truncated]
+```|CONTENT:baselines/dspy-eval.json
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_16.json
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+... [truncated]
+```|CONTENT:baselines/build123d-baseline.json
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_17.json
+{
+  "target": "/home/raw/Documents/GitHub/build123d",
+... [truncated]
+```|CONTENT:baselines/dspy-baseline.json
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_18.json
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+  "timestamp": "2026-01-31T14:48:55-05:00",
+```|CONTENT:baselines/small-project-baseline.json
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_19.json
+{
+  "target": "tests/fixtures/small_project",
+... [truncated]
+```|CONTENT:tests/fixtures/small_project/Cargo.toml
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_20.json
-```
-{"name":
-```|CONTENT:tests/fixtures/deep/a/b/c/d/e/f/deep.rs
-```
-pub
-```|CONTENT:tests/fixtures/binary_only/doc.pdf
-```
-%PDF-1.4\n%
-```|CONTENT:tests/fixtures/no_extensions/LICENSE
-```
-MIT License
-```|CONTENT:tests/fixtures/no_extensions/Makefile
-```
-all:
-	@echo "ok"
-```|CONTENT:tests/fixtures/no_extensions/Dockerfile
-```
-FROM alpine:3.19
-CMD ["/bin/true"]
+[package]
+name = "small_project"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = "1"
 ```|[+497 more files truncated]

@@ -61,53 +61,6 @@ pub mod tokenizer;
 pub use crate::config::{Config, OutputFormat};
 pub use crate::error::{DirpackError, Result};
 
-```|CONTENT:Cargo.toml
-```
-[package]
-name = "dirpack"
-version = "0.3.3"
-edition = "2021"
-description = "Budgeted directory indexes for AI coding agents with tree-sitter signatures"
-license = "MIT"
-repository = "https://github.com/rawwerks/dirpack"
-readme = "README.md"
-keywords = ["cli", "ai", "context", "tree-sitter", "llm"]
-categories = ["command-line-utilities", "development-tools"]
-include = [
-    "src/**/*",
-    "Cargo.toml",
-    "LICENSE",
-    "README.md",
-    "CHANGELOG.md",
-    "default_config.toml",
-]
-
-[dependencies]
-clap = { version = "4", features = ["derive"] }
-serde = { version = "1", features = ["derive"] }
-toml = "0.8"
-ignore = "0.4"
-walkdir = "2"
-tree-sitter = "0.24"
-tree-sitter-rust = "0.23"
-tree-sitter-go = "0.23"
-tree-sitter-python = "0.23"
-tree-sitter-typescript = "0.23"
-tree-sitter-javascript = "0.23"
-tree-sitter-c = "0.23"
-tree-sitter-cpp = "0.23"
-streaming-iterator = "0.1"
-thiserror = "2"
-anyhow = "1"
-dirs = "5"
-serde_json = "1"
-sha2 = "0.10"
-
-[dev-dependencies]
-tempfile = "3"
-assert_cmd = "2"
-predicates = "3"
-
 ```|CONTENT:src/format/mod.rs
 ```
 pub mod full;
@@ -184,14 +137,6 @@ pub trait Formatter {
     fn format(&self) -> String;
 }
 
-```|CONTENT:tests/fixtures/monorepo/README.md
-```
-# Monorepo Fixture
-
-```|CONTENT:tests/fixtures/root_only/README.md
-```
-# Root Only Fixture
-
 ```|CONTENT:tests/fixtures/small_project/README.md
 ```
 # Small Project
@@ -208,27 +153,83 @@ A test fixture for dirpack eval harness.
 
 This is not a real project. Used for testing budget allocation.
 
-```|CONTENT:src/limits.rs
+```|CONTENT:src/packer/content.rs
 ```
-//! Safety limits for server usage.
+//! Full file content inclusion.
 
-pub const MAX_BUDGET_TOKENS: usize = 200_000;
-pub const MAX_BUDGET_BYTES: usize = 800_000;
-pub const MAX_SCAN_DEPTH: usize = 20;
+use std::fs;
+use std::path::Path;
 
-pub fn clamp_budget_tokens(tokens: usize) -> usize {
-    tokens.min(MAX_BUDGET_TOKENS)
+use crate::budget::Budget;
+use crate::scanner::entry::FileEntry;
+
+/// Read file content, returning None if file is binary or too large.
+pub fn read_content(path: &Path) -> Option<String> {
+    let content = fs::read(path).ok()?;
+
+    // Check if file appears to be binary (contains null bytes)
+    if content.contains(&0) {
+        return None;
+    }
+
+    String::from_utf8(content).ok()
 }
 
-pub fn clamp_budget_bytes(bytes: usize) -> usize {
-    bytes.min(MAX_BUDGET_BYTES)
+/// Read file content for an entry.
+pub fn read_entry_content(entry: &FileEntry) -> Option<String> {
+    if entry.is_dir {
+        return None;
+    }
+    read_content(&entry.path)
 }
 
-pub fn clamp_scan_depth(depth: usize) -> usize {
-    if depth == 0 {
-        MAX_SCAN_DEPTH
-    } else {
-        depth.min(MAX_SCAN_DEPTH)
+/// Include file contents that fit within budget.
+/// Returns a list of (relative_path, content) tuples.
+pub fn include_contents(
+    entries: &[FileEntry],
+    budget: &mut Budget,
+) -> Vec<(String, String)> {
+    let mut included = Vec::new();
+
+    for entry in entries {
+        if entry.is_dir {
+            continue;
+        }
+
+        if let Some(content) = read_entry_content(entry) {
+            let path_str = entry.relative_path.to_string_lossy().to_string();
+            let full_content = format!("### {}\n```\n{}\n```\n", path_str, content);
+
+            if budget.try_add(&full_content) {
+                included.push((path_str, content));
+            } else {
+                // Budget exhausted, stop including content
+                break;
+            }
+        }
+    }
+
+    included
+}
+
+/// Extract first N lines from content as a summary.
+pub fn extract_summary(content: &str, max_lines: usize) -> String {
+    content
+        .lines()
+        .take(max_lines)
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_summary() {
+        let content = "line1\nline2\nline3\nline4\nline5";
+        let summary = extract_summary(content, 3);
+        assert_eq!(summary, "line1\nline2\nline3");
     }
 }
 
@@ -261,224 +262,211 @@ impl DirpackError {
 ```
 age1z28am8hy9n85h3e9u5as87x3ae04t65sk8zuszwydaqsjmye5sgsc9rqxf
 
-```|CONTENT:integrations/claude-code/commands/status.md
+```|CONTENT:tests/fixtures/submodule_like/submodule_repo/src/lib.rs
 ```
----
-description: Show dirpack plugin status (enabled / token budget / config file path)
----
+pub fn hello() -> &'static str { "hello from submodule" }
 
-The user wants the current status of the dirpack Claude Code plugin. Run the helper and show the raw output verbatim:
+```|CONTENT:CHANGELOG.md
+```
+# Changelog
 
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/dirpack-cc-config.sh" status
+... [truncated]
+```|CONTENT:tests/eval_harness.rs
 ```
+use std::path::PathBuf;
 
-```|CONTENT:tests/fixtures/empty_dirs/src/main.rs
+use dirpack::eval::evaluate;
+```|CONTENT:tests/archive_security.rs
 ```
-fn main() {}
+use std::path::Path;
 
-```|CONTENT:tests/fixtures/flat_1000_files/file_0189.txt
+... [truncated]
+```|CONTENT:tests/symlink_security.rs
 ```
-data
-```|CONTENT:tests/fixtures/flat_1000_files/file_0190.txt
+use std::path::Path;
+
+use dirpack::budget::BudgetTarget;
+```|CONTENT:tests/archive_entry_types.rs
 ```
-data
-```|CONTENT:tests/fixtures/flat_1000_files/file_0191.txt
+use std::fs;
+use std::path::Path;
+
+... [truncated]
+```|CONTENT:tests/path_traversal.rs
 ```
-data
-```|CONTENT:tests/fixtures/flat_1000_files/file_0192.txt
+use std::path::Path;
+
+... [truncated]
+```|CONTENT:scripts/eval-summary.sh
 ```
-data
-```|CONTENT:tests/fixtures/flat_1000_files/file_0193.txt
+#!/bin/bash
+# Generate summary of eval baselines
+... [truncated]
+```|CONTENT:LICENSE
 ```
-data
-```|CONTENT:tests/fixtures/flat_1000_files/file_0194.txt
+MIT License
+
+Copyright (c) 2026 Raymond Weitekamp
+
+... [truncated]
+```|CONTENT:tests/fixtures/small_project/src/config.rs
 ```
-data
-```|CONTENT:tests/fixtures/flat_1000_files/file_0195.txt
+//! Configuration module.
+
+... [truncated]
+```|CONTENT:tests/fixtures/small_project/src/utils.rs
 ```
-data
-```|CONTENT:tests/fixtures/flat_1000_files/file_0196.txt
+//! Utility functions.
+
+/// Format a message with timestamp.
+```|CONTENT:Cargo.toml
 ```
-data
-```|CONTENT:tests/fixtures/flat_1000_files/file_0197.txt
+[package]
+name = "dirpack"
+version = "0.3.3"
+edition = "2021"
+... [truncated]
+```|CONTENT:tests/fixtures/small_project/tests/integration.rs
 ```
-data
-```|CONTENT:tests/fixtures/flat_1000_files/file_0198.txt
-```
-data
-```|CONTENT:tests/fixtures/flat_1000_files/file_0199.txt
-```
-data
-```|CONTENT:tests/fixtures/flat_1000_files/file_0200.txt
-```
-data
-```|CONTENT:tests/fixtures/hidden_files/visible.txt
-```
-visible
-```|CONTENT:tests/fixtures/untracked_files/tracked.txt
-```
-tracked
+//! Integration tests.
+
+#[test]
+fn test_init() {
 ```|CONTENT:tests/fixtures/content_budget/alpha.md
 ```
 # Alpha
 
+... [truncated]
 ```|CONTENT:tests/fixtures/content_budget/beta.md
 ```
 # Beta
 
+... [truncated]
 ```|CONTENT:tests/fixtures/content_budget/delta.md
 ```
 # Delta
 
+... [truncated]
 ```|CONTENT:tests/fixtures/content_budget/gamma.md
 ```
 # Gamma
 
-```|CONTENT:tests/fixtures/empty_dirs/non_empty/file.txt
+... [truncated]
+```|CONTENT:eval/baseline.json
 ```
-hello
-```|CONTENT:tests/fixtures/symlinks/dir_target/inside.txt
+{
+  "timestamp": "2026-01-31T15:27:08",
+  "budgets": [
+    500,
+    1000,
+    2000,
+    4000
+  ],
+  "repos": {
+```|CONTENT:default_config.toml
 ```
-inside
-```|CONTENT:tests/fixtures/config_heavy/config_01.yaml
+# dirpack.toml - Project configuration
+
+[output]
+... [truncated]
+```|CONTENT:baselines/small-project-baseline-v2.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_02.yaml
+{
+  "target": "tests/fixtures/small_project",
+... [truncated]
+```|CONTENT:baselines/build123d-post-fix.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_03.yaml
+{
+  "target": "/home/raw/Documents/GitHub/build123d",
+... [truncated]
+```|CONTENT:baselines/build123d-incremental.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_04.yaml
+{
+  "target": "/home/raw/Documents/GitHub/build123d",
+... [truncated]
+```|CONTENT:baselines/build123d-stable-v1.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_05.yaml
+{
+  "target": "/home/raw/Documents/GitHub/build123d",
+... [truncated]
+```|CONTENT:baselines/build123d-lopsidedness-fix.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_06.yaml
+{
+  "target": "/home/raw/Documents/GitHub/build123d",
+... [truncated]
+```|CONTENT:baselines/dspy-post-fix.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_07.yaml
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+  "timestamp": "2026-01-31T14:55:20-05:00",
+```|CONTENT:baselines/build123d-baseline-v2.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_08.yaml
+{
+  "target": "/home/raw/Documents/GitHub/build123d",
+... [truncated]
+```|CONTENT:baselines/dirpack-eval.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_09.yaml
+{
+  "target": "/home/raw/Documents/GitHub/dirpack",
+  "timestamp": "2026-01-31T15:30:35-05:00",
+```|CONTENT:baselines/dspy-incremental.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_10.yaml
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+  "timestamp": "2026-01-31T14:58:57-05:00",
+```|CONTENT:baselines/build123d-tree-ratio-fix.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_11.yaml
+{
+  "target": "/home/raw/Documents/GitHub/build123d",
+... [truncated]
+```|CONTENT:baselines/dspy-stable-v1.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_12.yaml
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+  "timestamp": "2026-01-31T15:01:54-05:00",
+```|CONTENT:baselines/dspy-baseline-v2.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_13.yaml
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+  "timestamp": "2026-01-31T14:50:41-05:00",
+```|CONTENT:baselines/dspy-lopsidedness-fix.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_14.yaml
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+  "timestamp": "2026-01-31T15:24:47-05:00",
+```|CONTENT:baselines/dspy-tree-ratio-fix.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_15.yaml
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+  "timestamp": "2026-01-31T15:18:43-05:00",
+```|CONTENT:baselines/dspy-eval.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_16.yaml
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+  "timestamp": "2026-01-31T15:30:39-05:00",
+... [truncated]
+```|CONTENT:baselines/build123d-baseline.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_17.yaml
+{
+  "target": "/home/raw/Documents/GitHub/build123d",
+  "timestamp": "2026-01-31T14:48:57-05:00",
+```|CONTENT:baselines/dspy-baseline.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_18.yaml
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+  "timestamp": "2026-01-31T14:48:55-05:00",
+```|CONTENT:baselines/small-project-baseline.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_19.yaml
+{
+  "target": "tests/fixtures/small_project",
+  "timestamp": "2026-01-31T14:49:11-05:00",
+```|CONTENT:tests/fixtures/small_project/Cargo.toml
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_20.yaml
-```
-key:
-```|CONTENT:tests/fixtures/config_heavy/app.toml
-```
-[app]
-```|CONTENT:tests/fixtures/config_heavy/config_01.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_02.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_03.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_04.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_05.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_06.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_07.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_08.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_09.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_10.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_11.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_12.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_13.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_14.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_15.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_16.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_17.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_18.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_19.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_20.json
-```
-{"name":
-```|CONTENT:tests/fixtures/deep/a/b/c/d/e/f/deep.rs
-```
-pub fn
-```|CONTENT:tests/fixtures/binary_only/doc.pdf
-```
-%PDF-1.4\n%
-```|CONTENT:tests/fixtures/no_extensions/LICENSE
-```
-MIT License
-```|CONTENT:tests/fixtures/no_extensions/Makefile
-```
-all:
-	@echo "ok"
-```|CONTENT:tests/fixtures/no_extensions/Dockerfile
-```
-FROM alpine:3.19
-CMD ["/bin/true"]
+[package]
+name = "small_project"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = "1"
 ```|[+206 more files truncated]

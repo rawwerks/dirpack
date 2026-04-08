@@ -61,14 +61,6 @@ pub mod tokenizer;
 pub use crate::config::{Config, OutputFormat};
 pub use crate::error::{DirpackError, Result};
 
-```|CONTENT:tests/fixtures/monorepo/README.md
-```
-# Monorepo Fixture
-
-```|CONTENT:tests/fixtures/root_only/README.md
-```
-# Root Only Fixture
-
 ```|CONTENT:tests/fixtures/small_project/README.md
 ```
 # Small Project
@@ -85,100 +77,98 @@ A test fixture for dirpack eval harness.
 
 This is not a real project. Used for testing budget allocation.
 
-```|CONTENT:internal-private-docs/recipients.txt
+```|CONTENT:src/error.rs
 ```
-age1z28am8hy9n85h3e9u5as87x3ae04t65sk8zuszwydaqsjmye5sgsc9rqxf
+use std::result;
 
-```|CONTENT:integrations/claude-code/commands/status.md
-```
----
-description: Show dirpack plugin status (enabled / token budget / config file path)
----
+#[derive(Debug, thiserror::Error)]
+pub enum DirpackError {
+    #[error("I/O error: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("TOML parse error: {0}")]
+    Toml(#[from] toml::de::Error),
+    #[error("pack capacity reached; retry after {retry_after_secs}s")]
+    PackBusy { retry_after_secs: u64 },
+}
 
-The user wants the current status of the dirpack Claude Code plugin. Run the helper and show the raw output verbatim:
+pub type Result<T> = result::Result<T, DirpackError>;
 
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/dirpack-cc-config.sh" status
-```
+impl DirpackError {
+    pub fn retry_after_secs(&self) -> Option<u64> {
+        match self {
+            DirpackError::PackBusy { retry_after_secs } => Some(*retry_after_secs),
+            _ => None,
+        }
+    }
+}
 
-```|CONTENT:tests/fixtures/config_heavy/config_19.yaml
+```|CONTENT:baselines/dspy-post-fix.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/config_20.yaml
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+... [truncated]
+```|CONTENT:baselines/dirpack-eval.json
 ```
-key:
-```|CONTENT:tests/fixtures/config_heavy/app.toml
+{
+  "target": "/home/raw/Documents/GitHub/dirpack",
+... [truncated]
+```|CONTENT:baselines/dspy-incremental.json
 ```
-[app]
-```|CONTENT:tests/fixtures/config_heavy/config_03.json
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+... [truncated]
+```|CONTENT:baselines/build123d-tree-ratio-fix.json
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_04.json
+{
+  "target": "/home/raw/Documents/GitHub/build123d",
+... [truncated]
+```|CONTENT:baselines/dspy-stable-v1.json
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_05.json
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+... [truncated]
+```|CONTENT:baselines/dspy-baseline-v2.json
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_06.json
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+... [truncated]
+```|CONTENT:baselines/dspy-lopsidedness-fix.json
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_07.json
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+... [truncated]
+```|CONTENT:baselines/dspy-tree-ratio-fix.json
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_08.json
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+... [truncated]
+```|CONTENT:baselines/dspy-eval.json
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_09.json
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+  "timestamp": "2026-01-31T15:30:39-05:00",
+```|CONTENT:baselines/build123d-baseline.json
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_10.json
+{
+  "target": "/home/raw/Documents/GitHub/build123d",
+... [truncated]
+```|CONTENT:baselines/dspy-baseline.json
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_11.json
+{
+  "target": "/home/raw/Documents/GitHub/dspy",
+  "timestamp": "2026-01-31T14:48:55-05:00",
+```|CONTENT:baselines/small-project-baseline.json
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_12.json
+{
+  "target": "tests/fixtures/small_project",
+  "timestamp": "2026-01-31T14:49:11-05:00",
+```|CONTENT:tests/fixtures/small_project/Cargo.toml
 ```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_13.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_14.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_15.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_17.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_18.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_19.json
-```
-{"name":
-```|CONTENT:tests/fixtures/config_heavy/config_20.json
-```
-{"name":
-```|CONTENT:tests/fixtures/deep/a/b/c/d/e/f/deep.rs
-```
-pub fn deep()
-```|CONTENT:tests/fixtures/deep_nesting/a/b/c/d/e/f/g/deep.rs
-```
-pub fn
-```|CONTENT:tests/fixtures/binary_only/doc.pdf
-```
-%PDF-1.4\n%
-```|CONTENT:tests/fixtures/no_extensions/LICENSE
-```
-MIT License
-```|CONTENT:tests/fixtures/no_extensions/Makefile
-```
-all:
-	@echo "ok"
-```|CONTENT:tests/fixtures/no_extensions/Dockerfile
-```
-FROM alpine:3.19
-CMD ["/bin/true"]
+[package]
+name = "small_project"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = "1"
 ```|[+430 more files truncated]

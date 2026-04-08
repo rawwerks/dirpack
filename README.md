@@ -106,9 +106,9 @@ Run `dirpack init` to generate a full default config.
 
 ## Pi Extension: Launch Context
 
-This repo now ships a pi extension at `.pi/extensions/dirpack-launch-context.ts`.
+This repo ships a pi extension at `.pi/extensions/dirpack-launch-context.ts`.
 
-It is designed to be symlinked into `~/.pi/agent/extensions/` so pi can auto-load it globally:
+Symlink it into `~/.pi/agent/extensions/` so pi auto-loads it globally:
 
 ```bash
 ln -sfn /path/to/dirpack/.pi/extensions/dirpack-launch-context.ts \
@@ -141,6 +141,44 @@ Binary resolution order:
 2. `target/debug/dirpack` from this repo
 3. `target/release/dirpack` from this repo
 4. `dirpack` on `PATH`
+
+## Claude Code Plugin
+
+This repo ships a Claude Code plugin at `integrations/claude-code/` that injects a fresh token-budgeted dirpack index of the current working directory into every new Claude Code session, via a `SessionStart` hook.
+
+Install via Claude Code's plugin marketplace (uses your local repo as the source):
+
+```bash
+claude plugin marketplace add /path/to/dirpack/integrations/claude-code
+claude plugin install dirpack@rawwerks-dirpack
+```
+
+Behavior:
+
+- enabled by default
+- default budget is `2000` tokens
+- on every new/resumed/cleared session, it runs `dirpack pack . -t <budget> -f pipe` against `$CWD` and emits `hookSpecificOutput.additionalContext`
+- state persists to `${XDG_CONFIG_HOME:-~/.config}/dirpack/cc-plugin.json`
+
+Slash commands (Claude Code namespaces plugin commands as `/<plugin>:<command>`):
+
+- `/dirpack:status` — show current config
+- `/dirpack:on` — enable SessionStart injection
+- `/dirpack:off` — disable SessionStart injection
+- `/dirpack:budget 4000` — set persistent token budget
+- `/dirpack:create 1500` — one-shot pack of the current working directory at the given token budget (does not persist)
+
+`/dirpack:create <tokens>` is a shortcut for `dirpack pack . -t <tokens> -f pipe --root-label .` with no config mutation — useful when you want a fresh snapshot without changing the automatic injection settings.
+
+Binary resolution order:
+
+1. `dirpack` on `PATH`
+2. `~/.local/bin/dirpack`
+3. `~/.cargo/bin/dirpack`
+4. `/usr/local/bin/dirpack`
+5. `/usr/bin/dirpack`
+
+See `integrations/claude-code/README.md` for the full plugin layout and internals.
 
 ## How It Works
 

@@ -1,0 +1,20 @@
+{
+  "name": "dirpack",
+  "version": "0.1.0",
+  "description": "Injects a fresh dirpack directory index of the current repo into every Claude Code session. Token-budgeted, progressive disclosure, tree-sitter signatures. Configurable via /dirpack slash command.",
+  "author": {
+    "name": "rawwerks",
+    "url": "https://github.com/rawwerks"
+  },
+  "homepage": "https://github.com/rawwerks/dirpack",
+  "repository": "https://github.com/rawwerks/dirpack",
+  "license": "MIT",
+  "keywords": [
+    "dirpack",
+    "context-injection",
+    "directory-index",
+    "token-budget",
+    "tree-sitter",
+    "session-start"
+  ]
+}

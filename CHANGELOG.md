@@ -10,6 +10,7 @@ Semantic Versioning.
 ### Added
 - Pi launch-context extension at `.pi/extensions/dirpack-launch-context.ts` for automatic hidden `dirpack` injection on session start, enabled by default with a 2000-token budget and `/dirpack on|off|budget|status|refresh` controls.
 - `/dirpack create <tokens>` one-shot command for explicit hidden context injection without persisting config changes.
+- Claude Code plugin at `integrations/claude-code/` (marketplace `rawwerks-dirpack`). Injects a fresh token-budgeted dirpack index into every Claude Code session via a `SessionStart` hook, and ships five slash commands: `/dirpack:status`, `/dirpack:on`, `/dirpack:off`, `/dirpack:budget <N>`, and `/dirpack:create <N>` (the last being a one-shot pack of the current working directory that doesn't mutate persisted config). Default budget is 2000 tokens; state persists to `${XDG_CONFIG_HOME:-~/.config}/dirpack/cc-plugin.json`.
 
 ### Fixed
 - Submodule-like edge-case tests now stage their nested `.git` file in a temp copy of the fixture so colocated `jj` repos do not report phantom deletions under `tests/fixtures/submodule_like/`.

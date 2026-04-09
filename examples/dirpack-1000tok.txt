@@ -18,31 +18,25 @@ pub mod tokenizer;
 pub use crate::config::{Config, OutputFormat};
 pub use crate::error::{DirpackError, Result};
 
-```|CONTENT:src/error.rs
+```|CONTENT:src/packer/mod.rs
 ```
-use std::result;
-
-#[derive(Debug, thiserror::Error)]
-pub enum DirpackError {
-    #[error("I/O error: {0}")]
-    Io(#[from] std::io::Error),
-    #[error("TOML parse error: {0}")]
-    Toml(#[from] toml::de::Error),
-    #[error("pack capacity reached; retry after {retry_after_secs}s")]
-    PackBusy { retry_after_secs: u64 },
-}
-
-pub type Result<T> = result::Result<T, DirpackError>;
-
-impl DirpackError {
-    pub fn retry_after_secs(&self) -> Option<u64> {
-        match self {
-            DirpackError::PackBusy { retry_after_secs } => Some(*retry_after_secs),
-            _ => None,
-        }
-    }
-}
-
+//! Packer module for progressive disclosure algorithm.
+//!
+//! Phases:
+//! 1. SPINE - Directory tree structure (always included)
+//! 2. SIGNATURES - Code signatures for high-priority files
+// ...
+pub mod content;
+pub mod extractors;
+pub mod signatures;
+pub mod spine;
+pub struct TruncationInfo {
+    pub fn has_truncation(&self) -> bool {
+    pub fn format_indicator(&self) -> Option<String> {
+pub struct PackResult {
+pub fn pack(
+pub fn try_pack(
+pub fn pack_default(root: &Path, target_tokens: usize) -> PackResult {
 ```|CONTENT:internal-private-docs/recipients.txt
 ```
 age1z28am8hy9n85h3e9u5as87x3ae04t65sk8zuszwydaqsjmye5sgsc9rqxf
@@ -71,7 +65,7 @@ age1z28am8hy9n85h3e9u5as87x3ae04t65sk8zuszwydaqsjmye5sgsc9rqxf
 ```
 {
   "target": "/home/raw/Documents/GitHub/dspy",
-... [truncated]
+  "timestamp": "2026-01-31T15:30:39-05:00",
 ```|CONTENT:baselines/build123d-baseline.json
 ```
 {
@@ -81,10 +75,10 @@ age1z28am8hy9n85h3e9u5as87x3ae04t65sk8zuszwydaqsjmye5sgsc9rqxf
 ```
 {
   "target": "/home/raw/Documents/GitHub/dspy",
-... [truncated]
+  "timestamp": "2026-01-31T14:48:55-05:00",
 ```|CONTENT:baselines/small-project-baseline.json
 ```
 {
   "target": "tests/fixtures/small_project",
 ... [truncated]
-```|[+497 more files truncated]
+```|[+498 more files truncated]

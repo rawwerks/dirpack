@@ -289,6 +289,7 @@ mod tests {
         let rules = vec![PriorityRule {
             pattern: "README*".to_string(),
             priority: 200,
+            extract: None,
         }];
         let categories = CategoryConfig::default();
         let weights = PriorityWeights::default();
@@ -302,6 +303,7 @@ mod tests {
         let rules = vec![PriorityRule {
             pattern: "**/mod.rs".to_string(),
             priority: 130,
+            extract: None,
         }];
         let categories = CategoryConfig::default();
         let weights = PriorityWeights::default();

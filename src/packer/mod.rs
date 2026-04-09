@@ -19,6 +19,7 @@
 //! - Validate with dogfood evals before merging
 
 pub mod content;
+pub mod extractors;
 pub mod signatures;
 pub mod spine;
 
@@ -526,6 +527,9 @@ fn pack_impl(
                 let Some(content_text) = content::read_entry_content(file) else {
                     continue;
                 };
+                // Try content extraction (e.g., deps from package.json, pub mods from lib.rs)
+                let content_text = extractors::maybe_extract(file, &content_text, &config.priority_rules)
+                    .unwrap_or(content_text);
                 let rel_path = file.relative_path.to_string_lossy().to_string();
                 let safe_content = sanitize_content_for_pipe(&content_text);
                 let segment = format!("CONTENT:{}\n```\n{}\n```", rel_path, safe_content);

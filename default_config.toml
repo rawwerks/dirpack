@@ -45,6 +45,12 @@ priority = 30
 content_weight = 0.0     # never include raw data content
 
 # Priority rules - higher = more important, included first in budget
+# Optional "extract" field transforms content before budget accounting.
+# Built-in extractors:
+#   json_keys:key1,key2         - include only named top-level JSON keys
+#   toml_sections:sec1,sec2     - include only named TOML sections
+#   lines_matching:prefix1|pfx2 - include lines starting with any prefix
+#   api_surface                 - first 5 lines + all pub/export declarations
 [[priority_rules]]
 pattern = "README*"
 priority = 200
@@ -60,14 +66,17 @@ priority = 200
 [[priority_rules]]
 pattern = "Cargo.toml"
 priority = 150
+extract = "toml_sections:dependencies,dev-dependencies"
 
 [[priority_rules]]
 pattern = "package.json"
 priority = 150
+extract = "json_keys:dependencies,devDependencies,scripts"
 
 [[priority_rules]]
 pattern = "go.mod"
 priority = 150
+extract = "lines_matching:require |module "
 
 [[priority_rules]]
 pattern = "src/main.*"
@@ -76,10 +85,12 @@ priority = 140
 [[priority_rules]]
 pattern = "src/lib.*"
 priority = 140
+extract = "api_surface"
 
 [[priority_rules]]
 pattern = "**/mod.rs"
 priority = 130
+extract = "api_surface"
 
 [[priority_rules]]
 pattern = "**/*_test.*"

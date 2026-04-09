@@ -253,6 +253,17 @@ impl Category {
 pub struct PriorityRule {
     pub pattern: String,
     pub priority: i32,
+    /// Optional content extractor spec. When set, the content phase
+    /// transforms this file's content through the named extractor before
+    /// budget accounting. Format: `"extractor_name:arg1,arg2"`.
+    ///
+    /// Built-in extractors:
+    /// - `json_keys:key1,key2` — include only named top-level JSON keys
+    /// - `toml_sections:sec1,sec2` — include only named TOML sections
+    /// - `lines_matching:prefix1|prefix2` — include lines starting with any prefix
+    /// - `api_surface` — first 5 lines + all pub/export declarations
+    #[serde(default)]
+    pub extract: Option<String>,
 }
 
 /// Configurable priority weight adjustments.
@@ -400,50 +411,62 @@ fn default_priority_rules() -> Vec<PriorityRule> {
         PriorityRule {
             pattern: "README*".to_string(),
             priority: 200,
+            extract: None,
         },
         PriorityRule {
             pattern: "AGENTS.md".to_string(),
             priority: 200,
+            extract: None,
         },
         PriorityRule {
             pattern: "CLAUDE.md".to_string(),
             priority: 200,
+            extract: None,
         },
         PriorityRule {
             pattern: "Cargo.toml".to_string(),
             priority: 150,
+            extract: Some("toml_sections:dependencies,dev-dependencies".to_string()),
         },
         PriorityRule {
             pattern: "package.json".to_string(),
             priority: 150,
+            extract: Some("json_keys:dependencies,devDependencies,scripts".to_string()),
         },
         PriorityRule {
             pattern: "go.mod".to_string(),
             priority: 150,
+            extract: Some("lines_matching:require |module ".to_string()),
         },
         PriorityRule {
             pattern: "src/main.*".to_string(),
             priority: 140,
+            extract: None,
         },
         PriorityRule {
             pattern: "src/lib.*".to_string(),
             priority: 140,
+            extract: Some("api_surface".to_string()),
         },
         PriorityRule {
             pattern: "**/mod.rs".to_string(),
             priority: 130,
+            extract: Some("api_surface".to_string()),
         },
         PriorityRule {
             pattern: "**/*_test.*".to_string(),
             priority: 50,
+            extract: None,
         },
         PriorityRule {
             pattern: "**/test_*".to_string(),
             priority: 50,
+            extract: None,
         },
         PriorityRule {
             pattern: "**/*.lock".to_string(),
             priority: 10,
+            extract: None,
         },
     ]
 }

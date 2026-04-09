@@ -17,6 +17,7 @@ Semantic Versioning.
 - `content_weight` per file category controls how aggressively each category's files are included in the content phase. Defaults: code/docs 1.0, config 0.2, build/data 0.0. Configurable in dirpack.toml via `[categories.<name>].content_weight`.
 - `test_content_weight` and `fixture_content_weight` in `[priority]` (both default 0.0). Test and fixture files get spine + signatures but never content body. Set to 1.0 to restore old behavior.
 - Import-only snippet detection: truncated snippets where >80% of lines are import/require/use statements are skipped automatically.
+- Content extractors: optional `extract` field on priority rules transforms file content before budget accounting. Four built-in extractors: `json_keys` (package.json deps/scripts), `toml_sections` (Cargo.toml dependencies), `lines_matching` (go.mod require blocks), `api_surface` (pub mod/use/fn declarations from entry points). Default rules auto-extract for common manifests and lib.rs files. Configurable per-pattern in dirpack.toml.
 
 ### Changed
 - Content phase skips files under 50 bytes (fully represented by spine) and snippets truncated to fewer than 3 lines (eliminates single-import/shebang junk). Among equal-priority files, larger files now sort first for content inclusion instead of smaller ones.

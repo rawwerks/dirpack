@@ -6,7 +6,7 @@ Injects a fresh token-budgeted [dirpack](https://github.com/rawwerks/dirpack) in
 
 - **SessionStart hook**: runs `dirpack pack . -t <budget> -f pipe` against `$CWD` and injects the output as `additionalContext` on every new, resumed, or cleared session.
 - **`/dirpack` slash command**: toggle the plugin on/off and change the token budget without leaving Claude Code.
-- **On by default**, budget defaults to **2000 tokens**.
+- **On by default**, budget defaults to **3000 tokens**.
 
 ## Installation
 
@@ -45,7 +45,7 @@ Claude Code namespaces plugin commands as `/<plugin>:<command>`:
 State is persisted at `${XDG_CONFIG_HOME:-$HOME/.config}/dirpack/cc-plugin.json`:
 
 ```json
-{ "enabled": true, "budget_tokens": 2000 }
+{ "enabled": true, "budget_tokens": 3000 }
 ```
 
 Changes take effect on the **next** session start — restart Claude Code or run `/clear` to refresh.

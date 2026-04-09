@@ -3,8 +3,8 @@
 # Injects a fresh token-budgeted dirpack index of $CWD into the new session.
 #
 # Honours per-user config at ${XDG_CONFIG_HOME:-$HOME/.config}/dirpack/cc-plugin.json:
-#   { "enabled": true, "budget_tokens": 2000 }
-# Defaults: enabled=true, budget_tokens=2000.
+#   { "enabled": true, "budget_tokens": 3000 }
+# Defaults: enabled=true, budget_tokens=3000.
 set -euo pipefail
 
 INPUT="$(cat || true)"
@@ -17,12 +17,12 @@ CONFIG_FILE="$CONFIG_DIR/cc-plugin.json"
 
 # Defaults
 ENABLED="true"
-BUDGET="2000"
+BUDGET="3000"
 
 if [ -f "$CONFIG_FILE" ]; then
   # Use has() so an explicit `false` isn't mistaken for an unset default.
   ENABLED="$(jq -r 'if has("enabled") then .enabled else true end' "$CONFIG_FILE" 2>/dev/null || echo true)"
-  BUDGET="$(jq -r 'if has("budget_tokens") then .budget_tokens else 2000 end' "$CONFIG_FILE" 2>/dev/null || echo 2000)"
+  BUDGET="$(jq -r 'if has("budget_tokens") then .budget_tokens else 3000 end' "$CONFIG_FILE" 2>/dev/null || echo 3000)"
 fi
 
 # Respect off switch
@@ -32,9 +32,9 @@ esac
 
 # Validate budget is a positive integer
 case "$BUDGET" in
-  ''|*[!0-9]*) BUDGET=2000 ;;
+  ''|*[!0-9]*) BUDGET=3000 ;;
 esac
-[ "$BUDGET" -gt 0 ] || BUDGET=2000
+[ "$BUDGET" -gt 0 ] || BUDGET=3000
 
 # Locate dirpack binary
 DIRPACK=""

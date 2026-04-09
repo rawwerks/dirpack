@@ -28,9 +28,9 @@ read_enabled() {
 
 read_budget() {
   if [ -f "$CONFIG_FILE" ]; then
-    jq -r 'if has("budget_tokens") then .budget_tokens else 2000 end' "$CONFIG_FILE" 2>/dev/null || echo 2000
+    jq -r 'if has("budget_tokens") then .budget_tokens else 3000 end' "$CONFIG_FILE" 2>/dev/null || echo 3000
   else
-    echo 2000
+    echo 3000
   fi
 }
 

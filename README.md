@@ -154,7 +154,7 @@ ln -sfn /path/to/dirpack/.pi/extensions/dirpack-launch-context.ts \
 Behavior:
 
 - enabled by default
-- default budget is `2000` tokens
+- default budget is `3000` tokens
 - on pi session start, it generates a fresh `dirpack pack . -t <budget> -f pipe --root-label .`
 - injects that pack as a hidden custom message in the pi session log/context
 
@@ -192,7 +192,7 @@ claude plugin install dirpack@rawwerks-dirpack
 Behavior:
 
 - enabled by default
-- default budget is `2000` tokens
+- default budget is `3000` tokens
 - on every new/resumed/cleared session, it runs `dirpack pack . -t <budget> -f pipe` against `$CWD` and emits `hookSpecificOutput.additionalContext`
 - state persists to `${XDG_CONFIG_HOME:-~/.config}/dirpack/cc-plugin.json`
 

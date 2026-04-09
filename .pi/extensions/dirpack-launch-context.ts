@@ -9,7 +9,7 @@ const CUSTOM_MESSAGE_TYPE = "dirpack-launch-context";
 const STATE_ENTRY_TYPE = "dirpack-launch-config";
 const EVENT_ENTRY_TYPE = "dirpack-launch-event";
 const STATUS_KEY = "dirpack-launch-context";
-const DEFAULT_BUDGET_TOKENS = 2000;
+const DEFAULT_BUDGET_TOKENS = 3000;
 const PACK_TIMEOUT_MS = 30_000;
 const OUTPUT_FORMAT = "pipe";
 

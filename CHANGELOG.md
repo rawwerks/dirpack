@@ -15,6 +15,8 @@ Semantic Versioning.
 - `max_file_size_bytes` scanning config (default: 2 MiB). Files larger than this limit still appear in the directory spine but are skipped for signature extraction and content reads, preventing multi-second stalls on repos with large binary/data files.
 - CLI `--exclude` patterns are now merged into config exclude patterns and applied in all scan modes (previously `--exclude` was parsed but not wired into `run_pack`).
 - `content_weight` per file category controls how aggressively each category's files are included in the content phase. Defaults: code/docs 1.0, config 0.2, build/data 0.0. Configurable in dirpack.toml via `[categories.<name>].content_weight`.
+- `test_content_weight` and `fixture_content_weight` in `[priority]` (both default 0.0). Test and fixture files get spine + signatures but never content body. Set to 1.0 to restore old behavior.
+- Import-only snippet detection: truncated snippets where >80% of lines are import/require/use statements are skipped automatically.
 
 ### Changed
 - Content phase skips files under 50 bytes (fully represented by spine) and snippets truncated to fewer than 3 lines (eliminates single-import/shebang junk). Among equal-priority files, larger files now sort first for content inclusion instead of smaller ones.

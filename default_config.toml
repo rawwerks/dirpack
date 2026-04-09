@@ -104,6 +104,8 @@ priority = 10
 # fixture_penalty = -25       # Penalty for fixture/mock files and directories
 # depth_penalty_step = -5     # Penalty per depth level beyond 2
 # max_depth_penalty = -30     # Maximum total depth penalty
+# test_content_weight = 0.0   # Content multiplier for test files (0=never)
+# fixture_content_weight = 0.0 # Content multiplier for fixture files (0=never)
 
 # Exclude patterns (gitignore syntax)
 [exclude]

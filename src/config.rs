@@ -276,6 +276,12 @@ pub struct PriorityWeights {
     pub depth_penalty_step: i32,
     /// Maximum depth penalty (default: -30)
     pub max_depth_penalty: i32,
+    /// Content-phase multiplier for test files (default: 0.1). Applied on
+    /// top of the category content_weight when deciding whether to include
+    /// a test file's content. 0.0 = never include test content.
+    pub test_content_weight: f64,
+    /// Content-phase multiplier for fixture/mock files (default: 0.1).
+    pub fixture_content_weight: f64,
 }
 
 impl Default for PriorityWeights {
@@ -289,6 +295,8 @@ impl Default for PriorityWeights {
             fixture_penalty: -25,
             depth_penalty_step: -5,
             max_depth_penalty: -30,
+            test_content_weight: 0.0,
+            fixture_content_weight: 0.0,
         }
     }
 }

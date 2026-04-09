@@ -530,14 +530,12 @@ fn pack_impl(
                 let safe_content = sanitize_content_for_pipe(&content_text);
                 let segment = format!("CONTENT:{}\n```\n{}\n```", rel_path, safe_content);
                 let cost = content_cost_units(&segment, budget.target);
-                let base_priority = priority::calculate_priority(
+                let priority_score = priority::content_priority(
                     file,
                     &config.priority_rules,
                     &config.categories,
                     &config.priority,
                 );
-                let cw = priority::content_weight(&file.extension, &config.categories);
-                let priority_score = (base_priority as f64 * cw) as i32;
                 candidates.push(ContentCandidate {
                     rel_path,
                     safe_content,
@@ -565,6 +563,14 @@ fn pack_impl(
                 }
 
                 if candidate.cost > max_full_units {
+                    remaining_candidates.push(candidate);
+                    continue;
+                }
+
+                // Don't waste full-content budget on near-zero-priority files
+                // (test fixtures, data files with content_weight=0, etc.).
+                // They'll get a chance in the snippet phase if budget remains.
+                if candidate.priority <= 0 {
                     remaining_candidates.push(candidate);
                     continue;
                 }
@@ -597,6 +603,11 @@ fn pack_impl(
                 }
             }
 
+            // Filter out zero-priority candidates before snippet phase too
+            let remaining_candidates: Vec<_> = remaining_candidates
+                .into_iter()
+                .filter(|c| c.priority > 0)
+                .collect();
             let total_remaining = remaining_candidates.len();
             for (idx, candidate) in remaining_candidates.into_iter().enumerate() {
                 if budget.is_exhausted() || snippet_budget.is_exhausted() {
@@ -1012,18 +1023,52 @@ fn build_snippet_segment(
         return None;
     }
 
-    // If the snippet was truncated to fewer than 3 lines, it's almost
-    // certainly a single import/shebang/package declaration that conveys
-    // nothing beyond what the spine already shows. Skip it rather than
-    // waste tokens on "#!/usr/bin/env bash" or "import Foundation".
     if was_truncated {
         let line_count = truncated.lines().count();
+        // If truncated to fewer than 3 lines, it's almost certainly a
+        // single import/shebang/package declaration. Skip it.
         if line_count < 3 {
+            return None;
+        }
+        // If the visible lines are almost entirely imports/requires,
+        // the snippet teaches nothing beyond what the spine shows.
+        // Skip if >80% of non-empty lines are import-like.
+        if is_mostly_imports(&truncated) {
             return None;
         }
     }
 
     Some(format!("{}{}{}", header, truncated, footer))
+}
+
+/// Returns true if >80% of non-empty lines look like import/require/use
+/// statements. Used to skip snippets that truncated to just their preamble.
+fn is_mostly_imports(text: &str) -> bool {
+    let mut total = 0usize;
+    let mut import_like = 0usize;
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with("//") || trimmed.starts_with('#') {
+            continue;
+        }
+        total += 1;
+        if trimmed.starts_with("import ")
+            || trimmed.starts_with("from ")
+            || trimmed.starts_with("use ")
+            || trimmed.starts_with("require(")
+            || trimmed.starts_with("const ") && trimmed.contains("require(")
+            || trimmed.starts_with("export ")  && (trimmed.contains(" from ") || trimmed.starts_with("export *"))
+            || trimmed.starts_with("@import ")
+            || trimmed.starts_with("package ")
+            || trimmed.starts_with("import Foundation")
+            || trimmed.starts_with("import XCTest")
+            || trimmed.starts_with("import Testing")
+        {
+            import_like += 1;
+        }
+    }
+    // Need at least 3 lines to judge, otherwise let the 3-line minimum handle it
+    total >= 3 && (import_like as f64 / total as f64) > 0.8
 }
 
 fn truncate_content_to_budget(

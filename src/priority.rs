@@ -82,9 +82,36 @@ fn matches_simple(text: &str, pattern: &str) -> bool {
     false
 }
 
+/// Compute a content-phase priority for a file. This combines:
+/// - The base priority from `calculate_priority`
+/// - The category's `content_weight` (e.g., config=0.2, build=0.0)
+/// - A harsh multiplier for test/fixture files (0.1) so they almost
+///   never get content budget — their names in the spine are enough
+pub fn content_priority(
+    entry: &FileEntry,
+    rules: &[PriorityRule],
+    categories: &CategoryConfig,
+    weights: &PriorityWeights,
+) -> i32 {
+    let base = calculate_priority(entry, rules, categories, weights);
+    let cat_weight = category_content_weight(&entry.extension, categories);
+
+    let file_name = entry.file_name().to_ascii_lowercase();
+    let components = path_components_lower(&entry.relative_path);
+    let test_fixture_weight = if is_fixture_like(&file_name, &components) {
+        weights.fixture_content_weight
+    } else if is_test_like(&file_name, &components) {
+        weights.test_content_weight
+    } else {
+        1.0
+    };
+
+    (base as f64 * cat_weight * test_fixture_weight) as i32
+}
+
 /// Look up the content_weight for a file's extension. Returns 1.0 for
 /// extensions that don't match any category (unknown files get full weight).
-pub fn content_weight(extension: &str, categories: &CategoryConfig) -> f64 {
+fn category_content_weight(extension: &str, categories: &CategoryConfig) -> f64 {
     let ext_lower = extension.to_lowercase();
     for cat in [&categories.code, &categories.docs, &categories.config, &categories.build, &categories.data] {
         if cat.extensions.iter().any(|e| e == &ext_lower) {

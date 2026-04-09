@@ -61,22 +61,6 @@ pub mod tokenizer;
 pub use crate::config::{Config, OutputFormat};
 pub use crate::error::{DirpackError, Result};
 
-```|CONTENT:tests/fixtures/small_project/README.md
-```
-# Small Project
-
-A test fixture for dirpack eval harness.
-
-## Features
-
-- Simple structure
-- Known file count
-- Predictable signatures
-
-## Usage
-
-This is not a real project. Used for testing budget allocation.
-
 ```|CONTENT:src/error.rs
 ```
 use std::result;
@@ -102,6 +86,26 @@ impl DirpackError {
     }
 }
 
+```|CONTENT:internal-private-docs/recipients.txt
+```
+age1z28am8hy9n85h3e9u5as87x3ae04t65sk8zuszwydaqsjmye5sgsc9rqxf
+
+```|CONTENT:LICENSE
+```
+MIT License
+
+Copyright (c) 2026 Raymond Weitekamp
+```|CONTENT:Cargo.toml
+```
+[package]
+name = "dirpack"
+version = "0.3.3"
+edition = "2021"
+```|CONTENT:default_config.toml
+```
+# dirpack.toml - Project configuration
+
+[output]
 ```|CONTENT:baselines/dspy-post-fix.json
 ```
 {
@@ -141,7 +145,7 @@ impl DirpackError {
 ```
 {
   "target": "/home/raw/Documents/GitHub/dspy",
-... [truncated]
+  "timestamp": "2026-01-31T15:18:43-05:00",
 ```|CONTENT:baselines/dspy-eval.json
 ```
 {
@@ -157,18 +161,10 @@ impl DirpackError {
 {
   "target": "/home/raw/Documents/GitHub/dspy",
   "timestamp": "2026-01-31T14:48:55-05:00",
+... [truncated]
 ```|CONTENT:baselines/small-project-baseline.json
 ```
 {
   "target": "tests/fixtures/small_project",
   "timestamp": "2026-01-31T14:49:11-05:00",
-```|CONTENT:tests/fixtures/small_project/Cargo.toml
-```
-[package]
-name = "small_project"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-serde = "1"
 ```|[+430 more files truncated]

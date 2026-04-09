@@ -137,22 +137,6 @@ pub trait Formatter {
     fn format(&self) -> String;
 }
 
-```|CONTENT:tests/fixtures/small_project/README.md
-```
-# Small Project
-
-A test fixture for dirpack eval harness.
-
-## Features
-
-- Simple structure
-- Known file count
-- Predictable signatures
-
-## Usage
-
-This is not a real project. Used for testing budget allocation.
-
 ```|CONTENT:src/packer/content.rs
 ```
 //! Full file content inclusion.
@@ -258,45 +242,92 @@ impl DirpackError {
     }
 }
 
-```|CONTENT:internal-private-docs/recipients.txt
+```|CONTENT:src/limits.rs
 ```
-age1z28am8hy9n85h3e9u5as87x3ae04t65sk8zuszwydaqsjmye5sgsc9rqxf
+//! Safety limits for server usage.
 
-```|CONTENT:tests/fixtures/submodule_like/submodule_repo/src/lib.rs
+pub const MAX_BUDGET_TOKENS: usize = 200_000;
+pub const MAX_BUDGET_BYTES: usize = 800_000;
+pub const MAX_SCAN_DEPTH: usize = 20;
+
+pub fn clamp_budget_tokens(tokens: usize) -> usize {
+    tokens.min(MAX_BUDGET_TOKENS)
+}
+
+pub fn clamp_budget_bytes(bytes: usize) -> usize {
+    bytes.min(MAX_BUDGET_BYTES)
+}
+
+pub fn clamp_scan_depth(depth: usize) -> usize {
+    if depth == 0 {
+        MAX_SCAN_DEPTH
+    } else {
+        depth.min(MAX_SCAN_DEPTH)
+    }
+}
+
+```|CONTENT:README.md
 ```
-pub fn hello() -> &'static str { "hello from submodule" }
+# dirpack
 
+... [truncated]
+```|CONTENT:eval/README.md
+```
+# Eval Harness
+
+... [truncated]
+```|CONTENT:src/cache.rs
+```
+//! On-disk pack cache.
+//!
+... [truncated]
+```|CONTENT:src/format/json.rs
+```
+//! JSON structured output format.
+
+... [truncated]
+```|CONTENT:src/cli.rs
+```
+use std::path::PathBuf;
+
+use clap::{Args, Parser, Subcommand};
+```|CONTENT:src/archive.rs
+```
+use std::path::{Component, Path, PathBuf};
+
+... [truncated]
+```|CONTENT:src/tokenizer.rs
+```
+//! Token counting utilities.
+//!
+... [truncated]
 ```|CONTENT:CHANGELOG.md
 ```
 # Changelog
 
 ... [truncated]
-```|CONTENT:tests/eval_harness.rs
+```|CONTENT:baselines/CHANGELOG.md
 ```
-use std::path::PathBuf;
+# Dirpack Improvement Changelog
 
-use dirpack::eval::evaluate;
-```|CONTENT:tests/archive_security.rs
+## Stable v3 (2026-01-31) 🎉
+```|CONTENT:scripts/eval.sh
 ```
-use std::path::Path;
-
+#!/bin/bash
+# dirpack eval harness - measures quality + speed
 ... [truncated]
-```|CONTENT:tests/symlink_security.rs
+```|CONTENT:scripts/dogfood-eval.sh
 ```
-use std::path::Path;
-
-use dirpack::budget::BudgetTarget;
-```|CONTENT:tests/archive_entry_types.rs
-```
-use std::fs;
-use std::path::Path;
-
+#!/bin/bash
+# Dogfood evaluation - agent reads actual output
 ... [truncated]
-```|CONTENT:tests/path_traversal.rs
+```|CONTENT:install.sh
 ```
-use std::path::Path;
+#!/usr/bin/env bash
+# Wrapped in main() to prevent curl<PIPE>bash race condition
+set -euo pipefail
 
-... [truncated]
+main() {
 ```|CONTENT:scripts/eval-summary.sh
 ```
 #!/bin/bash
@@ -309,48 +340,12 @@ MIT License
 Copyright (c) 2026 Raymond Weitekamp
 
 ... [truncated]
-```|CONTENT:tests/fixtures/small_project/src/config.rs
-```
-//! Configuration module.
-
-... [truncated]
-```|CONTENT:tests/fixtures/small_project/src/utils.rs
-```
-//! Utility functions.
-
-/// Format a message with timestamp.
 ```|CONTENT:Cargo.toml
 ```
 [package]
 name = "dirpack"
 version = "0.3.3"
 edition = "2021"
-... [truncated]
-```|CONTENT:tests/fixtures/small_project/tests/integration.rs
-```
-//! Integration tests.
-
-#[test]
-fn test_init() {
-```|CONTENT:tests/fixtures/content_budget/alpha.md
-```
-# Alpha
-
-... [truncated]
-```|CONTENT:tests/fixtures/content_budget/beta.md
-```
-# Beta
-
-... [truncated]
-```|CONTENT:tests/fixtures/content_budget/delta.md
-```
-# Delta
-
-... [truncated]
-```|CONTENT:tests/fixtures/content_budget/gamma.md
-```
-# Gamma
-
 ... [truncated]
 ```|CONTENT:eval/baseline.json
 ```
@@ -368,7 +363,7 @@ fn test_init() {
 # dirpack.toml - Project configuration
 
 [output]
-... [truncated]
+format = "pipe"           # "pipe" <PIPE> "full" <PIPE> "json"
 ```|CONTENT:baselines/small-project-baseline-v2.json
 ```
 {
@@ -388,7 +383,7 @@ fn test_init() {
 ```
 {
   "target": "/home/raw/Documents/GitHub/build123d",
-... [truncated]
+  "timestamp": "2026-01-31T15:02:15-05:00",
 ```|CONTENT:baselines/build123d-lopsidedness-fix.json
 ```
 {
@@ -403,7 +398,7 @@ fn test_init() {
 ```
 {
   "target": "/home/raw/Documents/GitHub/build123d",
-... [truncated]
+  "timestamp": "2026-01-31T14:51:01-05:00",
 ```|CONTENT:baselines/dirpack-eval.json
 ```
 {
@@ -418,17 +413,19 @@ fn test_init() {
 ```
 {
   "target": "/home/raw/Documents/GitHub/build123d",
-... [truncated]
+  "timestamp": "2026-01-31T15:18:52-05:00",
 ```|CONTENT:baselines/dspy-stable-v1.json
 ```
 {
   "target": "/home/raw/Documents/GitHub/dspy",
   "timestamp": "2026-01-31T15:01:54-05:00",
+... [truncated]
 ```|CONTENT:baselines/dspy-baseline-v2.json
 ```
 {
   "target": "/home/raw/Documents/GitHub/dspy",
   "timestamp": "2026-01-31T14:50:41-05:00",
+... [truncated]
 ```|CONTENT:baselines/dspy-lopsidedness-fix.json
 ```
 {
@@ -439,6 +436,7 @@ fn test_init() {
 {
   "target": "/home/raw/Documents/GitHub/dspy",
   "timestamp": "2026-01-31T15:18:43-05:00",
+... [truncated]
 ```|CONTENT:baselines/dspy-eval.json
 ```
 {
@@ -455,18 +453,16 @@ fn test_init() {
 {
   "target": "/home/raw/Documents/GitHub/dspy",
   "timestamp": "2026-01-31T14:48:55-05:00",
+  "dirpack_version": "0.1.0",
 ```|CONTENT:baselines/small-project-baseline.json
 ```
 {
   "target": "tests/fixtures/small_project",
   "timestamp": "2026-01-31T14:49:11-05:00",
-```|CONTENT:tests/fixtures/small_project/Cargo.toml
+... [truncated]
+```|CONTENT:integrations/claude-code/hooks/hooks.json
 ```
-[package]
-name = "small_project"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-serde = "1"
+{
+  "description": "dirpack plugin — inject a fresh token-budgeted directory index at session start",
+  "hooks": {
 ```|[+206 more files truncated]
